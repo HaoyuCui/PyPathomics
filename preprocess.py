@@ -5,18 +5,15 @@ Jineng Han
 FUSCC
 """
 from collections import defaultdict
-from tracemalloc import start
 from tqdm import tqdm
 from skimage.measure import regionprops
-from scipy import stats
-from scipy.spatial import cKDTree
+from utils import get_config
 import os
-# os.add_dll_directory(r'D:\Applications\openslide-win64-20230414\bin')
-from openslide import OpenSlide
 import skimage.feature as skfeat
 import cv2
 import numpy as np
 import igraph as ig
+import json
 
 import time
 
@@ -24,8 +21,16 @@ import multiprocessing as mp
 
 try:
     mp.set_start_method('spawn')
-except:
+except RuntimeError:
     pass
+
+try:
+    openslide_home = get_config()['openslide-home']
+    os.add_dll_directory(openslide_home)
+    from openslide import OpenSlide
+except Exception as e:
+    print(f"Error in loading OpenSlide: {e}")
+    exit(1)
 
 
 def getRegionPropFromContour(contour, bbox, extention=2):
@@ -36,7 +41,7 @@ def getRegionPropFromContour(contour, bbox, extention=2):
                       width + extention * 2),
                      dtype=np.uint8)
     contour = np.array(contour)
-    contour[:, 0] = contour[:, 0] - left + extention 
+    contour[:, 0] = contour[:, 0] - left + extention
     contour[:, 1] = contour[:, 1] - top + extention
     cv2.drawContours(image, [contour], 0, 1, -1)
     # TODO: check contour coords
@@ -49,7 +54,6 @@ def getCurvature(contour, n_size=5):
     contour_circle = np.concatenate([contour, contour[0:1]], axis=0)
     dxy = np.diff(contour_circle, axis=0)
 
- 
     samplekeep = np.zeros((len(contour)), dtype=np.bool_)
     samplekeep[0] = True
     flag = 0
@@ -158,7 +162,7 @@ def getCellMask(contour, bbox, pad=2, level=0):
                          width + pad * 2),
                         dtype=np.uint8)
     contour = np.array(contour)
-    contour[:, 0] = contour[:, 0] - left + pad 
+    contour[:, 0] = contour[:, 0] - left + pad
     contour[:, 1] = contour[:, 1] - top + pad
     cv2.drawContours(cellMask, [contour], 0, 1, -1)
     return cellMask
@@ -324,59 +328,6 @@ def constructGraphFromDict(
         wsiPath: str, nucleusInfo: dict, distanceThreshold: float,
         knn_n: int = 5, level: int = 0, offset=np.array([0, 0])
 ):
-    r"""Construct graph from nucleus information dictionary
-
-    Parameters
-    ----------
-    nucleusInfo : dict
-        'mag': int
-            magnification of the result
-        'nuc': dict
-            nucleus information
-            'nuclei ID' : dict
-                note that ID generated from HoverNet is not continuous
-                'bbox' : list
-                    [[left, top], [right, bottom]]
-                'centroid' : list
-                    [column, row]
-                'contour' : list, from cv2.findContours
-                    [[column1, row1], [column2, row2], ... ]
-                'type_prob' : float
-                    The probability of current nuclei belonging to type 'type'
-                'type' : int
-
-    distanceThreshold : maximum distance in magnification of 40x
-
-    typeDict : dict
-        "0" : "nolabe"
-        "1" : "neopla"
-        "2" : "inflam"
-        "3" : "connec"
-        "4" : "necros"
-        "5" : "no-neo"
-
-    cellSize : int, odd
-        size of cell cropped for extracting GLCM features
-
-    level : int
-        level for reading WSI
-        0 : 40x
-        1 : 20x
-        ...
-
-    Returns
-    -------
-    graph :
-
-    """
-    typeDict2 = {
-        'neolabe': 0,
-        'neopla': 1,
-        'inflame': 2,
-        'connect': 3,
-        'necros': 4,
-        'normal': 5
-    }
     offset = np.array([0, 0])
     print(f"{'Total 9 steps: 0 ~ 8':*^30s}")
     mag = nucleusInfo['mag']
@@ -409,20 +360,61 @@ def constructGraphFromDict(
     t1 = time.time()
     morphFeats = getMorphFeatures(names, contours, bboxes, 'MorphFeatures', process_n=8)
     for k, v in zip(morphFeats.keys(),
-                 morphFeats.values()):
-     if k != 'name':
-         globalGraph.vs[morphFeats['name']][
-             'Morph_' + k] = v
+                    morphFeats.values()):
+        if k != 'name':
+            globalGraph.vs[morphFeats['name']][
+                'Morph_' + k] = v
     print(f"{'morph features cost':#^40s}, {time.time() - t1:*^10.2f}")
 
     print('Getting GLCM features')
     t2 = time.time()
     GLCMFeats = getGLCMFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=8)
     for k, v in zip(GLCMFeats.keys(),
-                 GLCMFeats.values()):
+                    GLCMFeats.values()):
         if k != 'name':
             globalGraph.vs[GLCMFeats['name']][
                 'Texture_' + k] = v
     print(f"{'GLCM features cost':#^40s}, {time.time() - t2:*^10.2f}")
 
     return globalGraph  # edge_info
+
+
+def process(json_path, wsi_path, output_path):
+    assert os.path.exists(json_path) and os.path.isfile(json_path), f"json_path: {json_path} is not allowed"
+    assert os.path.exists(wsi_path) and os.path.isfile(wsi_path), f"wsi_path: {wsi_path} is not allowed"
+    try:
+        os.makedirs(output_path, exist_ok=True)
+    except PermissionError:
+        print(f"Permission denied to create directory: {output_path}")
+        exit(1)
+
+    distanceThreshold = 100
+    sample_name = os.path.basename(wsi_path).split('.')[0]
+    with open(json_path) as fp:
+        print(f"{'Loading json':*^30s}")
+        nucleusInfo = json.load(fp)
+
+    global_graph = constructGraphFromDict(wsi_path, nucleusInfo, distanceThreshold, k, level)
+    vertex_dataframe = global_graph.get_vertex_dataframe()
+
+    col_dist = defaultdict(list)
+    cellType = ['T', 'I', 'S']
+    for featname in vertex_dataframe.columns.values:
+        if 'Graph' not in featname:
+            # public feature, including cell information, Morph feature and GLCM feature
+            for cell in cellType:
+                col_dist[cell] += [featname] if featname != 'Contour' else []
+        else:
+            # Graph feature, format like 'Graph_T-I_Nsubgraph'
+            for cell in cellType:
+                featype = featname.split('_')[1]  # Graph feature type like 'T-T', 'T-I'
+                col_dist[cell] += [featname] if cell in featype else []
+    cellType_save = {'T': [1],  # Neopla
+                     'I': [2],  # Inflam
+                     'S': [3],  # Connec
+                     'N': [5]}  # Normal
+
+    for i in col_dist.keys():
+        vertex_csvfile = os.path.join(output_path, sample_name + '_Feats_' + i + '.csv')
+        save_index = vertex_dataframe['CellType'].isin(cellType_save[i]).values
+        vertex_dataframe.iloc[save_index].to_csv(vertex_csvfile, index=False, columns=col_dist[i])
