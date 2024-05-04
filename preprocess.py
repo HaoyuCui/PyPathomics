@@ -325,13 +325,12 @@ def getGraphCenterFeatures(graph: ig.Graph):
 
 
 def constructGraphFromDict(
-        wsiPath: str, nucleusInfo: dict, distanceThreshold: float,
-        knn_n: int = 5, level: int = 0, offset=np.array([0, 0])
+        wsiPath: str, nucleusInfo: dict,
+        level: int = 0, offset=np.array([0, 0])
 ):
     offset = np.array([0, 0])
     print(f"{'Total 9 steps: 0 ~ 8':*^30s}")
     mag = nucleusInfo['mag']
-    distanceThreshold = distanceThreshold / (40.0 / mag)
 
     bboxes, centroids, contours, types = [], [], [], []
 
@@ -379,36 +378,30 @@ def constructGraphFromDict(
     return globalGraph  # edge_info
 
 
-def process(json_path, wsi_path, output_path):
-    assert os.path.exists(json_path) and os.path.isfile(json_path), f"json_path: {json_path} is not allowed"
-    assert os.path.exists(wsi_path) and os.path.isfile(wsi_path), f"wsi_path: {wsi_path} is not allowed"
+def process(json_path, wsi_path, output_path, level=0):
+    assert os.path.exists(json_path) and os.path.isfile(json_path), \
+        f"json_path: {json_path} is not allowed, please make sure it's a file and exists"
+    assert os.path.exists(wsi_path) and os.path.isfile(wsi_path), \
+        f"wsi_path: {wsi_path} is not allowed, please make sure it's a file and exists"
     try:
         os.makedirs(output_path, exist_ok=True)
     except PermissionError:
         print(f"Permission denied to create directory: {output_path}")
         exit(1)
 
-    distanceThreshold = 100
     sample_name = os.path.basename(wsi_path).split('.')[0]
     with open(json_path) as fp:
         print(f"{'Loading json':*^30s}")
         nucleusInfo = json.load(fp)
 
-    global_graph = constructGraphFromDict(wsi_path, nucleusInfo, distanceThreshold, k, level)
+    global_graph = constructGraphFromDict(wsi_path, nucleusInfo, level)
     vertex_dataframe = global_graph.get_vertex_dataframe()
 
     col_dist = defaultdict(list)
     cellType = ['T', 'I', 'S']
-    for featname in vertex_dataframe.columns.values:
-        if 'Graph' not in featname:
-            # public feature, including cell information, Morph feature and GLCM feature
-            for cell in cellType:
-                col_dist[cell] += [featname] if featname != 'Contour' else []
-        else:
-            # Graph feature, format like 'Graph_T-I_Nsubgraph'
-            for cell in cellType:
-                featype = featname.split('_')[1]  # Graph feature type like 'T-T', 'T-I'
-                col_dist[cell] += [featname] if cell in featype else []
+    for feat_name in vertex_dataframe.columns.values:
+        for cell in cellType:
+            col_dist[cell] += [feat_name] if feat_name != 'Contour' else []
     cellType_save = {'T': [1],  # Neopla
                      'I': [2],  # Inflam
                      'S': [3],  # Connec
