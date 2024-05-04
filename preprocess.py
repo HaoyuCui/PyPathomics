@@ -296,10 +296,7 @@ def getSingleGraphFeatures(args):
 
 def getGraphCenterFeatures(graph: ig.Graph):
     result = defaultdict(list)
-    # norm_cmds = ['name', 'Nsubgraph', 'Eigenvector', 'Degrees', 'AuthorityScore', 'Coreness', 'Diversity',
-    #             'HubScore', 'NeighborhoodSize', 'Strength', 'ClusteringCoefficient']
     norm_cmds = ['name', 'Nsubgraph', 'Degrees',
-                 # 'AuthorityScore', 'HubScore', 'Eigenvector',
                  'Coreness', 'ClusteringCoefficient']
     multi_cmds = ['Eccentricity', 'HarmonicCentrality', 'Closeness', 'Betweenness']
     for subgraph in tqdm(graph.decompose()):

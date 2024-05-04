@@ -9,9 +9,9 @@ import preprocess
 from utils import get_config
 
 parser = argparse.ArgumentParser(description='Configurations for PyPathomoics')
-parser.add_argument('-b', action='store_true', default=True, help='Run as batch, input: directory')
 parser.add_argument('--auto_skip', action='store_true', default=True, help='Automatically skip the existing dir')
 parser.add_argument('--config', type=str, default=None, help='Config file for the run')
+parser.add_argument('-f', action='store_true', default=False, help='Input: file, instead of dir')
 parser.add_argument('--json', type=str, default=None, help='Json dir(file) for the run')
 parser.add_argument('--wsi', type=str, default=None, help='WSI dir(file) for the run')
 parser.add_argument('--ext', type=str, default='svs', help='WSI file extension, default: svs')
@@ -26,7 +26,7 @@ def run_wsi(_args):
 
 
 def main():
-    if args.b:
+    if not args.f:
         process_queue = [file for file in os.listdir(args.json) if file.endswith('.json')]
         output_dir = args.output
 

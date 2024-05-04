@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import Delaunay
 from shapely.geometry import Polygon, MultiPolygon
 
-from triangle_feature import get_triangle_feature_df
+from utils import get_triangle_feature_df
 
 
 def intersect_ratio(p_a, p_b):
@@ -111,7 +111,14 @@ class FeatureExtractor:
         return pd.DataFrame(triangle_feature, index=[0])
 
     def extract(self):
+        if len(self.feature_list) == 0:
+            raise ValueError('Feature list is empty!')
+        elif len(self.cell_types) == 0:
+            raise ValueError('Cell types list is empty!')
+
         if 'Triangle' not in self.feature_list:
             return self.extract_features()
-        elif 'Triangle' in self.feature_list:
+        elif 'Triangle' in self.feature_list and len(self.cell_types) == 1:
+            raise self.extract_triangle_features()
+        elif 'Triangle' in self.feature_list and len(self.cell_types) >= 2:
             return pd.concat([self.extract_features(), self.extract_triangle_features()], axis=1)
