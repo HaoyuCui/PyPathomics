@@ -1,9 +1,3 @@
-# coding=utf-8
-"""
-2021-11-10
-Jineng Han
-FUSCC
-"""
 from collections import defaultdict
 from tqdm import tqdm
 from skimage.measure import regionprops
@@ -14,8 +8,7 @@ import cv2
 import numpy as np
 import igraph as ig
 import json
-
-import time
+import logging
 
 import multiprocessing as mp
 
@@ -28,9 +21,12 @@ try:
     openslide_home = get_config()['openslide-home']
     os.add_dll_directory(openslide_home)
     from openslide import OpenSlide
+    logging.info(f"OpenSlide loaded from: {openslide_home}")
 except Exception as e:
     print(f"Error in loading OpenSlide: {e}")
     exit(1)
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 
 def getRegionPropFromContour(contour, bbox, extention=2):
@@ -110,7 +106,6 @@ def SingleMorphFeatures(args):
         featuresDict['Extent'] += [regionProps.extent]
         featuresDict['MajorAxisLength'] += [regionProps.major_axis_length]
         featuresDict['MinorAxisLength'] += [regionProps.minor_axis_length]
-        # featuresDict['Orientation'] += [regionProps.orientation]
         featuresDict['Perimeter'] += [regionProps.perimeter]
         featuresDict['Solidity'] += [regionProps.solidity]
 
@@ -131,7 +126,7 @@ def getMorphFeatures(name, contours, bboxes, desc, process_n=1):
         featuresDict = defaultdict(list)
         vertex_len = len(name)
         batch_size = vertex_len // 8
-        for batch in range(0, vertex_len, batch_size):
+        for batch in tqdm(range(0, vertex_len, batch_size)):
             p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
             args = [[ids, name[i], contours[i], bboxes[i]] for ids, i in enumerate(p_slice)]
             with mp.Pool(process_n) as p:
@@ -206,8 +201,8 @@ def SingleGLCMFeatures(args):
     featuresDict['name'] = name
     for contour, bbox in zip(contours, bboxes):
         cellImg = getCellImg(slidePtr, bbox, pad, level)
-        cellmask = getCellMask(contour, bbox, pad).astype(np.bool_)
-        cellImg[~cellmask] = 0
+        cellMask = getCellMask(contour, bbox, pad).astype(np.bool_)
+        cellImg[~cellMask] = 0
 
         outMatrix = skfeat.graycomatrix(cellImg, [1], [0])
         outMatrix[0, :, ...] = 0
@@ -225,10 +220,10 @@ def SingleGLCMFeatures(args):
         featuresDict['Entropy'] += [Entropy[0][0]]
         featuresDict['Homogeneity'] += [homogeneity]
 
-        featuresDict['IntensityMean'] += [cellImg[cellmask].mean()]
-        featuresDict['IntensityStd'] += [cellImg[cellmask].std()]
-        featuresDict['IntensityMax'] += [cellImg[cellmask].max().astype('int16')]
-        featuresDict['IntensityMin'] += [cellImg[cellmask].min().astype('int16')]
+        featuresDict['IntensityMean'] += [cellImg[cellMask].mean()]
+        featuresDict['IntensityStd'] += [cellImg[cellMask].std()]
+        featuresDict['IntensityMax'] += [cellImg[cellMask].max().astype('int16')]
+        featuresDict['IntensityMin'] += [cellImg[cellMask].min().astype('int16')]
     return featuresDict
 
 
@@ -240,7 +235,7 @@ def getGLCMFeatures(wsiPath, name, contours, bboxes, pad=2, level=0, process_n=1
         featuresDict = defaultdict(list)
         vertex_len = len(name)
         batch_size = vertex_len // 8
-        for batch in range(0, vertex_len, batch_size):
+        for batch in tqdm(range(0, vertex_len, batch_size)):
             p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
             args = [[ids, wsiPath, name[i], contours[i], bboxes[i], pad, level] for ids, i in enumerate(p_slice)]
             with mp.Pool(process_n) as p:
@@ -251,96 +246,22 @@ def getGLCMFeatures(wsiPath, name, contours, bboxes, pad=2, level=0, process_n=1
     return featuresDict
 
 
-def getGraphDisKnnFeatures(name, disKnnList):
-    result = defaultdict(list)
-    result['name'] = name
-    disKnnList[np.isinf(disKnnList)] = np.nan
-    disKnnList_valid = np.ma.masked_invalid(disKnnList)
-    result['minEdgeLength'] += np.min(disKnnList_valid, axis=1).tolist()
-    result['meanEdgeLength'] += np.mean(disKnnList_valid, axis=1).tolist()
-    return result
-
-
-def getSingleGraphFeatures(args):
-    subgraph, cmd = args
-    result = defaultdict(list)
-    n = subgraph.vcount()
-    if cmd == 'name':
-        result['name'] += [int(i) for i in subgraph.vs['name']]
-    elif cmd == 'Nsubgraph':
-        result['Nsubgraph'] += [n] * n
-    elif cmd == 'Degrees':
-        result['Degrees'] += subgraph.degree()
-    elif cmd == 'Closeness':
-        result['Closeness'] += subgraph.closeness()
-    # Slow
-    elif cmd == 'Betweenness':
-        betweenness = np.array(subgraph.betweenness())
-        result['Betweenness'] += betweenness.tolist()
-        if n != 1 and n != 2:
-            betweenness = betweenness / ((n - 1) * (n - 2) / 2)
-        result['Betweenness_normed'] += betweenness.tolist()
-    elif cmd == 'Coreness':
-        result['Coreness'] += subgraph.coreness()
-    elif cmd == 'Eccentricity' or cmd == 'Eccentricity_normed':
-        eccentricity = np.array(subgraph.eccentricity())
-        result['Eccentricity'] += eccentricity.tolist()
-        result['Eccentricity_normed'] += (eccentricity / n).tolist()
-    elif cmd == 'HarmonicCentrality':
-        result['HarmonicCentrality'] += subgraph.harmonic_centrality()
-    elif cmd == 'ClusteringCoefficient':
-        result['ClusteringCoefficient'] += subgraph.transitivity_local_undirected()
-    return result
-
-
-def getGraphCenterFeatures(graph: ig.Graph):
-    result = defaultdict(list)
-    norm_cmds = ['name', 'Nsubgraph', 'Degrees',
-                 'Coreness', 'ClusteringCoefficient']
-    multi_cmds = ['Eccentricity', 'HarmonicCentrality', 'Closeness', 'Betweenness']
-    for subgraph in tqdm(graph.decompose()):
-        for cmd in norm_cmds:
-            args = [subgraph, cmd]
-            ans = getSingleGraphFeatures(args)
-            for k, v in zip(ans.keys(), ans.values()):
-                result[k] += v
-        if subgraph.vcount() > 50000:  # Huge graph, use multiprocessing
-            args = [[subgraph, cmd] for cmd in multi_cmds]
-            with mp.Pool() as p:
-                ans = p.map(getSingleGraphFeatures, args)
-            for q_info in ans:
-                for k, v in zip(q_info.keys(), q_info.values()):
-                    result[k] += v
-        else:  # Small graph, directly calucate
-            for cmd in multi_cmds:
-                args = [subgraph, cmd]
-                ans = getSingleGraphFeatures(args)
-                for k, v in zip(ans.keys(), ans.values()):
-                    result[k] += v
-    return result
-
-
-def constructGraphFromDict(
-        wsiPath: str, nucleusInfo: dict,
-        level: int = 0, offset=np.array([0, 0])
+def basicFeatureExtraction(
+        wsiPath, nucleusInfo, level, featureSet
 ):
     offset = np.array([0, 0])
-    print(f"{'Total 9 steps: 0 ~ 8':*^30s}")
-    mag = nucleusInfo['mag']
 
     bboxes, centroids, contours, types = [], [], [], []
 
-    for nucInfo in tqdm(nucleusInfo['nuc'].values(),
-                        desc="0. Preparing"):
-        tmpCnt = np.array(nucInfo[
-                              'contour'])
+    for nucInfo in tqdm(nucleusInfo['nuc'].values()):
+        tmpCnt = np.array(nucInfo['contour'])
         left, top = tmpCnt.min(0)
         right, bottom = tmpCnt.max(0)
         bbox = [[left + offset[0], top + offset[1]], [right + offset[0], bottom + offset[1]]]
-        bboxes.append(bbox)  # [[[, ],[, ]], [[, ],[, ]], ......]
-        centroids.append(nucInfo['centroid'])  ## [[, ], [, ], ......]
+        bboxes.append(bbox)
+        centroids.append(nucInfo['centroid'])
         contours.append(nucInfo['contour'])
-        types.append(nucInfo['type'])  ## [, , , ......]
+        types.append(nucInfo['type'])
     assert len(bboxes) == len(centroids) == len(
         types), 'The attribute of nodes (bboxes, centroids, types) must have same length'
     vertex_len = len(bboxes)
@@ -351,30 +272,24 @@ def constructGraphFromDict(
         'name': names, 'Bbox': bboxes, 'Centroid': centroids,
         'Contour': contours, 'CellType': types})
 
-    print('Getting morph features')
-    t1 = time.time()
-    morphFeats = getMorphFeatures(names, contours, bboxes, 'MorphFeatures', process_n=8)
-    for k, v in zip(morphFeats.keys(),
-                    morphFeats.values()):
-        if k != 'name':
-            globalGraph.vs[morphFeats['name']][
-                'Morph_' + k] = v
-    print(f"{'morph features cost':#^40s}, {time.time() - t1:*^10.2f}")
+    if 'Morph' in featureSet or 'morph' in featureSet:
+        logging.info('Getting Morph features')
+        morphFeats = getMorphFeatures(names, contours, bboxes, 'MorphFeatures', process_n=8)
+        for k, v in zip(morphFeats.keys(), morphFeats.values()):
+            if k != 'name':
+                globalGraph.vs[morphFeats['name']]['Morph_' + k] = v
 
-    print('Getting GLCM features')
-    t2 = time.time()
-    GLCMFeats = getGLCMFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=8)
-    for k, v in zip(GLCMFeats.keys(),
-                    GLCMFeats.values()):
-        if k != 'name':
-            globalGraph.vs[GLCMFeats['name']][
-                'Texture_' + k] = v
-    print(f"{'GLCM features cost':#^40s}, {time.time() - t2:*^10.2f}")
+    if 'Texture' in featureSet or 'texture' in featureSet:
+        logging.info('Getting Texture features')
+        GLCMFeats = getGLCMFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=8)
+        for k, v in zip(GLCMFeats.keys(), GLCMFeats.values()):
+            if k != 'name':
+                globalGraph.vs[GLCMFeats['name']]['Texture_' + k] = v
 
-    return globalGraph  # edge_info
+    return globalGraph
 
 
-def process(json_path, wsi_path, output_path, level=0):
+def process(json_path, wsi_path, output_path, level, feature_set, cell_types):
     assert os.path.exists(json_path) and os.path.isfile(json_path), \
         f"json_path: {json_path} is not allowed, please make sure it's a file and exists"
     assert os.path.exists(wsi_path) and os.path.isfile(wsi_path), \
@@ -390,13 +305,12 @@ def process(json_path, wsi_path, output_path, level=0):
         print(f"{'Loading json':*^30s}")
         nucleusInfo = json.load(fp)
 
-    global_graph = constructGraphFromDict(wsi_path, nucleusInfo, level)
+    global_graph = basicFeatureExtraction(wsi_path, nucleusInfo, level, feature_set)
     vertex_dataframe = global_graph.get_vertex_dataframe()
 
     col_dist = defaultdict(list)
-    cellType = ['T', 'I', 'S']
     for feat_name in vertex_dataframe.columns.values:
-        for cell in cellType:
+        for cell in cell_types:
             col_dist[cell] += [feat_name] if feat_name != 'Contour' else []
     cellType_save = {'T': [1],  # Neopla
                      'I': [2],  # Inflam

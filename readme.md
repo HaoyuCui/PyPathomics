@@ -63,3 +63,7 @@ python main.py --json /path/to/json_dir --wsi /path/to/wsi_dir --buffer /path/to
 python main.py -f --json /path/to/json_file --wsi /path/to/wsi_file --buffer /path/to/buffer --ext .svs --output /path/to/output
 ```
 
+
+### Feature set:
+
+

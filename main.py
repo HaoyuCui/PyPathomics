@@ -27,44 +27,47 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def process_files(args):
-    process_queue = list(args.json.glob(f'*.{args.ext}'))
+def process_files(args, configs):
+    process_queue = list(args.json.glob(f'*.json'))
     output_dir = args.output
+    ext = args.ext.split('.')[-1]
     logging.info(f'Total {len(process_queue)} files to process.')
 
     for i, json_path in enumerate(process_queue):
         slide_name = json_path.stem
-        wsi_path = args.wsi / f"{slide_name}.{args.ext}"
+        wsi_path = args.wsi / f"{slide_name}.{ext}"
         output_path = output_dir / f"{slide_name}_Feats_T.csv"
 
         if args.auto_skip and output_path.exists():
             logging.info(f'Skip {slide_name} as it is already processed.')
             continue
 
-        preprocess.process(json_path, wsi_path, output_dir, level=args.level)
+        preprocess.process(json_path, wsi_path, output_dir, args.level, configs['feature-set'], configs['cell-types'])
 
 
-def run_wsi(args):
-    preprocess.process(args.wsi, args.json, args.output)
+def run_wsi(args, configs):
+    preprocess.process(args.wsi, args.json, args.output, args.level, configs['feature-set'], configs['cell-types'])
 
 
 def main():
     args = parse_arguments()
-    process_queue = []
+    configs = get_config()
+
+    process_queue = list(args.json.glob(f'*.json'))
 
     if not args.file_mode:
-        process_files(args)
+        process_files(args, configs)
     else:
-        run_wsi(args)
+        run_wsi(args, configs)
 
     # Post-process features
-    feature_list = get_config()['feature-list']
-    cell_types = get_config()['cell-types']
+
     df_feats_list = []
 
     for i, slide in enumerate(process_queue):
         logging.info(f'Processing {slide} {i + 1} / {len(process_queue)}')
-        extractor = postprocess.FeatureExtractor(slide, args.buffer, feature_list=feature_list, cell_types=cell_types)
+        extractor = postprocess.FeatureExtractor(slide, args.buffer, feature_list=configs['feature-set'],
+                                                 cell_types=configs['cell-types'])
         slide_feats = extractor.extract()
         slide_feats['slide'] = slide
         df_feats_list.append(slide_feats)

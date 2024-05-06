@@ -112,13 +112,13 @@ class FeatureExtractor:
 
     def extract(self):
         if len(self.feature_list) == 0:
-            raise ValueError('Feature list is empty!')
+            raise ValueError('Feature list is empty! Check config file')
         elif len(self.cell_types) == 0:
-            raise ValueError('Cell types list is empty!')
+            raise ValueError('Cell types list is empty! Check config file')
 
         if 'Triangle' not in self.feature_list:
             return self.extract_features()
         elif 'Triangle' in self.feature_list and len(self.cell_types) == 1:
-            raise self.extract_triangle_features()
+            return self.extract_triangle_features()
         elif 'Triangle' in self.feature_list and len(self.cell_types) >= 2:
             return pd.concat([self.extract_features(), self.extract_triangle_features()], axis=1)
