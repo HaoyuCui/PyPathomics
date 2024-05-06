@@ -1,3 +1,5 @@
+import logging
+
 import yaml
 import pandas as pd
 from tqdm import tqdm
@@ -12,8 +14,16 @@ warnings.filterwarnings("ignore")
 
 # for config reading
 def read_yaml(file_path):
-    with open(file_path, 'r') as f:
-        return yaml.safe_load(f.read())
+    try:
+        with open(file_path, 'r') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        logging.error(f"Configuration file not found: {file_path}")
+        raise
+    except yaml.YAMLError as exc:
+        logging.error(f"Error parsing the YAML file: {file_path}, "
+                      f"make sure the feature-set & cell-types are <list> type")
+        raise
 
 
 def get_config():

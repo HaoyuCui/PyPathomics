@@ -44,7 +44,6 @@ def getRegionPropFromContour(contour, bbox, extention=2):
     contour[:, 0] = contour[:, 0] - left + extention
     contour[:, 1] = contour[:, 1] - top + extention
     cv2.drawContours(image, [contour], 0, 1, -1)
-    # TODO: check contour coords
     regionProp = regionprops(image)[0]
     return regionProp
 
