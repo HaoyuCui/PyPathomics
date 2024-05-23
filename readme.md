@@ -7,7 +7,7 @@ The PyPathomics is under development. The current version is 0.1.0.
 ## Installation
 
  ```bash
-conda create -n pypathomics python=3.7
+conda create -n pypathomics
  conda activate pypathomics
  pip install -r requirements.txt
  ```
@@ -22,13 +22,14 @@ conda create -n pypathomics python=3.7
    openslide-home: path\to\openslide-home
    feature-set: ['Morph', 'Texture', 'Triangle']
    cell_types: ['I', 'S', 'T']
+   statistic-types: ['basic', 'distribution']
 ```
 
 Where, 
 - `openslide-home`: Specifies the path to the OpenSlide library.
 - `feature-set`:  A list of feature sets to extract. Options: `Morph`, `Texture`, `Triangle`.
 - `cell_types`: Types of cells to analyze. Options: `I` (inflammatory), `S`, (stromal), `T` (tumor).
-
+- `statistic-types`: Types of statistics to calculate. Options: `basic`, `distribution`.
 
 
 #### Options for main.py

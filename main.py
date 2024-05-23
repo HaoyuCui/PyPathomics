@@ -67,7 +67,7 @@ def main():
     for i, slide in enumerate(process_queue):
         logging.info(f'Processing {slide} {i + 1} / {len(process_queue)}')
         extractor = postprocess.FeatureExtractor(slide, args.buffer, feature_list=configs['feature-set'],
-                                                 cell_types=configs['cell-types'])
+                                                 cell_types=configs['cell-types'], statistic_types=configs['statistic-types'])
         slide_feats = extractor.extract()
         slide_feats['slide'] = slide
         df_feats_list.append(slide_feats)

@@ -16,11 +16,13 @@ def intersect_ratio(p_a, p_b):
 
 
 class FeatureExtractor:
-    def __init__(self, slide, sc_MTOP_dir, feature_list, cell_types):
+    def __init__(self, slide, sc_MTOP_dir, feature_list, cell_types, statistic_types):
         self.slide = slide
         self.sc_MTOP_dir = sc_MTOP_dir
         self.feature_list = feature_list
         self.cell_types = cell_types
+        self.statistic_types = statistic_types
+        assert len(self.statistic_types) > 0, 'static_types should not be empty!'
 
     def read_csv_for_type(self, cell_type):
         return pd.read_csv(f'{self.sc_MTOP_dir}/{self.slide}_Feats_{cell_type}.csv')
@@ -31,24 +33,23 @@ class FeatureExtractor:
         stats = {}
         for col in df.columns:
             df[col] = df[col].astype(float)
-            stats.update({
-                # basic statistics
-                f'{cell_type}_{col}_mean': df[col].mean(),
-                f'{cell_type}_{col}_std': df[col].std(),
-                # distribution
-                f'{cell_type}_{col}_Q25': df[col].quantile(0.25),
-                f'{cell_type}_{col}_median': df[col].median(),
-                f'{cell_type}_{col}_Q75': df[col].quantile(0.75),
-                f'{cell_type}_{col}_IQR': df[col].quantile(0.75) - df[col].quantile(0.25),
-                f'{cell_type}_{col}_range': df[col].max() - df[col].min(),
-                # coefficient of variation
-                f'{cell_type}_{col}_CV': df[col].std() / df[col].mean(),
-                # skewness
-                f'{cell_type}_{col}_skew': df[col].skew(),
-                # kurtosis
-                f'{cell_type}_{col}_kurt': df[col].kurt()
-
-            })
+            stats_dict = {}
+            if 'basic' in self.statistic_types:
+                stats_dict.update({
+                    # basic statistics
+                    f'{cell_type}_{col}_mean': df[col].mean(),
+                    f'{cell_type}_{col}_std': df[col].std(),
+                })
+            if 'distribution' in self.statistic_types:
+                stats_dict.update({
+                    # distribution
+                    f'{cell_type}_{col}_Q25': df[col].quantile(0.25),
+                    f'{cell_type}_{col}_median': df[col].median(),
+                    f'{cell_type}_{col}_Q75': df[col].quantile(0.75),
+                    f'{cell_type}_{col}_IQR': df[col].quantile(0.75) - df[col].quantile(0.25),
+                    f'{cell_type}_{col}_range': df[col].max() - df[col].min(),
+                })
+            stats.update(stats_dict)
         return stats
 
     def remove_outliers(self, df, z_score_threshold=2):
