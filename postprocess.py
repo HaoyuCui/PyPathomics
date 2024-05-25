@@ -16,9 +16,9 @@ def intersect_ratio(p_a, p_b):
 
 
 class FeatureExtractor:
-    def __init__(self, slide, sc_MTOP_dir, feature_list, cell_types, statistic_types):
+    def __init__(self, slide, buffer_dir, feature_list, cell_types, statistic_types):
         self.slide = slide
-        self.sc_MTOP_dir = sc_MTOP_dir
+        self.sc_MTOP_dir = buffer_dir
         self.feature_list = feature_list
         self.cell_types = cell_types
         self.statistic_types = statistic_types
