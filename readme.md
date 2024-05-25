@@ -1,3 +1,7 @@
+<div align=center>
+ <img width="706" alt="pypathomics" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/1a3b29d4-5928-4e72-a157-7ea92ad689f9">
+</div>
+
 # PyPathomics
 
 > PyPathomics is an open-source software for gigapixel whole-slide image analysis.
