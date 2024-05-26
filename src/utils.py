@@ -27,7 +27,7 @@ def read_yaml(file_path):
 
 
 def get_config():
-    return read_yaml('config.yaml')
+    return read_yaml('../config.yaml')
 
 
 # for triangle features

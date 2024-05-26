@@ -1,12 +1,10 @@
 import argparse
-import os
 from pathlib import Path
 import pandas as pd
 import logging
 
-import postprocess
-import preprocess
-from utils import get_config
+from src import postprocess, preprocess
+from src.utils import get_config
 
 # Set up basic configuration for logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')

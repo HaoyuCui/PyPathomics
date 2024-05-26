@@ -18,14 +18,14 @@ def intersect_ratio(p_a, p_b):
 class FeatureExtractor:
     def __init__(self, slide, buffer_dir, feature_list, cell_types, statistic_types):
         self.slide = slide
-        self.sc_MTOP_dir = buffer_dir
+        self.buffer_dir = buffer_dir
         self.feature_list = feature_list
         self.cell_types = cell_types
         self.statistic_types = statistic_types
         assert len(self.statistic_types) > 0, 'static_types should not be empty!'
 
     def read_csv_for_type(self, cell_type):
-        return pd.read_csv(f'{self.sc_MTOP_dir}/{self.slide}_Feats_{cell_type}.csv')
+        return pd.read_csv(f'{self.buffer_dir}/{self.slide}_Feats_{cell_type}.csv')
 
     def compute_statistics(self, df, cell_type, remove_outliers):
         if remove_outliers:
