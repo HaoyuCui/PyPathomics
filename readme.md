@@ -59,7 +59,7 @@ Optional Arguments:
 
 ### Usage: 
 
-1. Make sure you run the Hover-Net and get the json files. Check the config file before run.
+1. Make sure you run the [Hover-Net's WSI Processing](https://github.com/vqdang/hover_net)  and get the json files. Check the config file before running.
 
 2. Analyze a Directory:
     ```bash
