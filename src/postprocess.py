@@ -4,7 +4,7 @@ import numpy as np
 from scipy.spatial import Delaunay
 from shapely.geometry import Polygon, MultiPolygon
 
-from utils import get_triangle_feature_df
+from src.utils import get_triangle_feature_df
 
 
 def intersect_ratio(p_a, p_b):

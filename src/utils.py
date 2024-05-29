@@ -8,8 +8,13 @@ from shapely.geometry import Polygon
 from shapely.ops import unary_union
 
 # do not show warnings
-import warnings
-warnings.filterwarnings("ignore")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
+
+def print_config(args):
+    logging.info("Configuration:")
+    for arg in vars(args):
+        print(f' - {arg}: {getattr(args, arg)}')
 
 
 # for config reading
@@ -27,7 +32,7 @@ def read_yaml(file_path):
 
 
 def get_config():
-    return read_yaml('../config.yaml')
+    return read_yaml('config.yaml')
 
 
 # for triangle features

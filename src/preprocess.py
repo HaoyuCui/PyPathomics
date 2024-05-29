@@ -1,7 +1,7 @@
 from collections import defaultdict
 from tqdm import tqdm
 from skimage.measure import regionprops
-from utils import get_config
+from src.utils import get_config
 import os
 import skimage.feature as skfeat
 import cv2
@@ -19,11 +19,13 @@ except RuntimeError:
 
 try:
     openslide_home = get_config()['openslide-home']
-    os.add_dll_directory(openslide_home)
+    # if windows
+    if os.name == 'nt':
+        os.add_dll_directory(openslide_home)
     from openslide import OpenSlide
-    logging.info(f"OpenSlide loaded from: {openslide_home}")
+    logging.info(f'OpenSlide loaded from: {openslide_home}')
 except Exception as e:
-    print(f"Error in loading OpenSlide: {e}")
+    logging.warning(f'Error in loading OpenSlide: {e}')
     exit(1)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -297,12 +299,11 @@ def process(json_path, wsi_path, output_path, level, feature_set, cell_types):
     try:
         os.makedirs(output_path, exist_ok=True)
     except PermissionError:
-        print(f"Permission denied to create directory: {output_path}")
-        exit(1)
+        logging.warning(f"Permission denied to create directory: {output_path}")
 
     sample_name = os.path.basename(wsi_path).split('.')[0]
     with open(json_path) as fp:
-        print(f"{'Loading json':*^30s}")
+        logging.info('Loading json')
         nucleusInfo = json.load(fp)
 
     global_graph = basicFeatureExtraction(wsi_path, nucleusInfo, level, feature_set)

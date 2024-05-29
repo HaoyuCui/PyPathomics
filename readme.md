@@ -30,7 +30,7 @@ pip install -r requirements.txt
 ```
 
 Where, 
-- `openslide-home`: Specifies the path to the OpenSlide library.
+- `openslide-home`: Specifies the path to the OpenSlide library. (for Windows only, leave it empty for Linux)
 - `feature-set`:  A list of feature sets to extract. Options: `Morph`, `Texture`, `Triangle`.
 - `cell_types`: Types of cells to analyze. Options: `I` (inflammatory), `S`, (stromal), `T` (tumor).
 - `statistic-types`: Types of statistics to calculate. Options: `basic`, `distribution`.

@@ -2,9 +2,10 @@ import argparse
 from pathlib import Path
 import pandas as pd
 import logging
+import sys
 
 from src import postprocess, preprocess
-from src.utils import get_config
+from src.utils import get_config, print_config
 
 # Set up basic configuration for logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -51,6 +52,7 @@ def main():
     args = parse_arguments()
     configs = get_config()
 
+    print_config(args)
     process_queue = list(args.json.glob(f'*.json'))
 
     if not args.file_mode:
@@ -65,7 +67,8 @@ def main():
     for i, slide in enumerate(process_queue):
         logging.info(f'Processing {slide} {i + 1} / {len(process_queue)}')
         extractor = postprocess.FeatureExtractor(slide, args.buffer, feature_list=configs['feature-set'],
-                                                 cell_types=configs['cell-types'], statistic_types=configs['statistic-types'])
+                                                 cell_types=configs['cell-types'],
+                                                 statistic_types=configs['statistic-types'])
         slide_feats = extractor.extract()
         slide_feats['slide'] = slide
         df_feats_list.append(slide_feats)
