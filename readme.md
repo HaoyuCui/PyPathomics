@@ -1,5 +1,5 @@
 <div align=center>
- <img width="706" alt="pypathomics" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/1a3b29d4-5928-4e72-a157-7ea92ad689f9">
+ <img width="1106" alt="image" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/93badd07-b488-45a4-a97c-78d503d02260">
 </div>
 
 # PyPathomics
