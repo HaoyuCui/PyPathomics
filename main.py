@@ -32,8 +32,8 @@ def process_files(args, configs):
     ext = args.ext.split('.')[-1]
     logging.info(f'Total {len(process_queue)} files to process.')
 
-    for i, json_path in enumerate(process_queue):
-        slide_name = json_path.stem
+    for i, seg_path in enumerate(process_queue):
+        slide_name = seg_path.stem
         wsi_path = args.wsi / f"{slide_name}.{ext}"
         output_path = output_dir / f"{slide_name}_Feats_T.csv"
 
@@ -41,7 +41,7 @@ def process_files(args, configs):
             logging.info(f'Skip {slide_name} as it is already processed.')
             continue
 
-        preprocess.process(json_path, wsi_path, output_dir, args.level, configs['feature-set'], configs['cell-types'])
+        preprocess.process(seg_path, wsi_path, output_dir, args.level, configs['feature-set'], configs['cell-types'])
 
 
 def run_wsi(args, configs):

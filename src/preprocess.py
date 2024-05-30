@@ -9,6 +9,7 @@ import numpy as np
 import igraph as ig
 import json
 import logging
+import joblib
 
 import multiprocessing as mp
 
@@ -291,9 +292,23 @@ def basicFeatureExtraction(
     return globalGraph
 
 
-def process(json_path, wsi_path, output_path, level, feature_set, cell_types):
-    assert os.path.exists(json_path) and os.path.isfile(json_path), \
-        f"json_path: {json_path} is not allowed, please make sure it's a file and exists"
+def read_data_as_json(dat_path):
+    data = joblib.load(dat_path)
+    if isinstance(data, dict):
+        return {key: read_data_as_json(value) for key, value in data.items()}
+    elif isinstance(data, list):
+        return [read_data_as_json(item) for item in data]
+    elif isinstance(data, np.ndarray):
+        return data.tolist()
+    elif isinstance(data, np.generic):
+        return np.asscalar(data)
+    else:
+        return data
+
+
+def process(seg_path, wsi_path, output_path, level, feature_set, cell_types):
+    assert os.path.exists(seg_path) and os.path.isfile(seg_path), \
+        f"json_path: {seg_path} is not allowed, please make sure it's a file and exists"
     assert os.path.exists(wsi_path) and os.path.isfile(wsi_path), \
         f"wsi_path: {wsi_path} is not allowed, please make sure it's a file and exists"
     try:
@@ -302,9 +317,15 @@ def process(json_path, wsi_path, output_path, level, feature_set, cell_types):
         logging.warning(f"Permission denied to create directory: {output_path}")
 
     sample_name = os.path.basename(wsi_path).split('.')[0]
-    with open(json_path) as fp:
-        logging.info('Loading json')
-        nucleusInfo = json.load(fp)
+    if seg_path.endswith('.json'):
+        with open(seg_path) as fp:
+            logging.info('Loading json')
+            nucleusInfo = json.load(fp)
+    elif seg_path.endswith('.dat'):
+        logging.info('Loading dat')
+        nucleusInfo = read_data_as_json(seg_path)
+    else:
+        raise ValueError(f"Unsupported file format: {seg_path.split('.')[-1]}, expected .json or .dat")
 
     global_graph = basicFeatureExtraction(wsi_path, nucleusInfo, level, feature_set)
     vertex_dataframe = global_graph.get_vertex_dataframe()
