@@ -8,6 +8,13 @@
 
 The PyPathomics is under development. The current version is 0.1.0.
 
+Support for:
+- [x] Hover-Net
+[[Repo](https://github.com/vqdang/hover_net)] [[Paper](https://www.sciencedirect.com/science/article/abs/pii/S1361841519301045?via%3Dihub)] (Graham et al., 2019)
+
+- [x] Cerberus
+[[Repo](https://github.com/TissueImageAnalytics/cerberus)] [[Paper](https://doi.org/10.1016/j.media.2022.102685)] (Graham et al., 2023)
+
 ## Installation
 
  ```bash
@@ -18,9 +25,9 @@ pip install -r requirements.txt
    
 ## Options and Usage
 
-### Options: 
+### Options:
 
-#### Options for config.yaml (e.g.)
+#### Options for config.yaml
 
 ```yaml
    openslide-home: path\to\openslide-home
@@ -41,7 +48,7 @@ Where,
 Required Arguments:
 ```text
     --config     Specify the configuration file path
-    --json       Path to the json directory or file from Hover-Net
+    --seg       Path to the seg directory or file from Hover-Net(.json) or Cerberus(.dat)
     --wsi        Path to the WSI directory or file
     --ext        WSI file extension (default: .svs)
     --buffer     Specify the output buffer dir for preprocessing
@@ -51,7 +58,7 @@ Required Arguments:
 
 Optional Arguments:  
 ```text
-    -f           Run on a single file (default: directory mode) 
+    -f           Run for a single file (default: run for directory) 
     --auto_skip  Skip existing directories automatically (default: True)
     --level      Detail level of the WSI to analyze (default: 0)
 ``` 
@@ -59,16 +66,18 @@ Optional Arguments:
 
 ### Usage: 
 
-1. Make sure you run the [Hover-Net's WSI Processing](https://github.com/vqdang/hover_net)  and get the json files. Check the config file before running.
+1. Make sure you run the [Hover-Net's wsi seg](https://github.com/vqdang/hover_net) or [Cerberus' wsi seg](https://github.com/TissueImageAnalytics/cerberus) and get the seg files. 
 
-2. Analyze a Directory:
+2. Modify and check the [config.yaml](./config.yaml) before running.
+
+3. Analyze a Directory:
     ```bash
-    python main.py --json /path/to/json_dir --wsi /path/to/wsi_dir --buffer /path/to/buffer --ext .svs --output /path/to/output
+    python main.py --seg /path/to/seg_dir --wsi /path/to/wsi_dir --buffer /path/to/buffer --ext .svs --output /path/to/output
     ```
 
-3. Analyze a Single File
+4. Analyze a Single File
     ```bash
-    python main.py -f --json /path/to/json_file --wsi /path/to/wsi_file --buffer /path/to/buffer --ext .svs --output /path/to/output
+    python main.py -f --seg /path/to/seg_file --wsi /path/to/wsi_file --buffer /path/to/buffer --ext .svs --output /path/to/output
     ```
 
 

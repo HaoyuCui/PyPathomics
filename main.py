@@ -17,7 +17,8 @@ def parse_arguments():
                         help='Automatically skip the existing dir')
     parser.add_argument('--config', type=str, default=None, help='Config file for the run')
     parser.add_argument('-f', '--file_mode', action='store_true', help='Input: file, instead of dir')
-    parser.add_argument('--json', type=Path, required=True, help='Json dir(file) for the run')
+    parser.add_argument('--seg', type=Path, required=True,
+                        help='Nucleus segmentation result dir(file) for the run, support suffix: .json or .dat')
     parser.add_argument('--wsi', type=Path, required=True, help='WSI dir(file) for the run')
     parser.add_argument('--ext', type=str, default='svs', help='WSI file extension, default: svs')
     parser.add_argument('--level', type=int, default=0, help='WSI level to process, default: 0')
@@ -27,7 +28,7 @@ def parse_arguments():
 
 
 def process_files(args, configs):
-    process_queue = list(args.json.glob(f'*.json'))
+    process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
     output_dir = args.output
     ext = args.ext.split('.')[-1]
     logging.info(f'Total {len(process_queue)} files to process.')
@@ -45,7 +46,7 @@ def process_files(args, configs):
 
 
 def run_wsi(args, configs):
-    preprocess.process(args.wsi, args.json, args.output, args.level, configs['feature-set'], configs['cell-types'])
+    preprocess.process(args.wsi, args.seg, args.output, args.level, configs['feature-set'], configs['cell-types'])
 
 
 def main():
@@ -53,7 +54,8 @@ def main():
     configs = get_config()
 
     print_config(args)
-    process_queue = list(args.json.glob(f'*.json'))
+    process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
+    logging.info(f'Total {len(process_queue)} files to process.')
 
     if not args.file_mode:
         process_files(args, configs)
