@@ -1,4 +1,4 @@
-openslide-home: D:\Applications\openslide-win64-20230414\bin
+openslide-home: path\to\openslide-win64-20230414\bin
 feature-set: ['Morph', 'Texture', 'Triangle']
 cell-types: ['I', 'S', 'T']
 statistic-types: ['basic', 'distribution']
