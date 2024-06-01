@@ -1,5 +1,5 @@
 <div align=center>
- <img width="1106" alt="image" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/93badd07-b488-45a4-a97c-78d503d02260">
+ <img width="1080" alt="image" src="src/.logo.svg">
 </div>
 
 # PyPathomics
@@ -22,7 +22,7 @@ conda create -n pypathomics
 conda activate pypathomics
 pip install -r requirements.txt
  ```
-   
+
 ## Options and Usage
 
 ### Options:
@@ -61,7 +61,7 @@ Optional Arguments:
     -f           Run for a single file (default: run for directory) 
     --auto_skip  Skip existing directories automatically (default: True)
     --level      Detail level of the WSI to analyze (default: 0)
-``` 
+```
 
 
 ### Usage: 
