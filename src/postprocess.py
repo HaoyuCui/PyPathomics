@@ -59,28 +59,26 @@ class FeatureExtractor:
 
     def extract_features(self):
         features = {}
-        cell_count = {}
         cell_sum = 0
+        cell_count = {}
         for cell_type in self.cell_types:
             df = self.read_csv_for_type(cell_type)
             cell_count[cell_type] = df.shape[0]
             cell_sum += cell_count[cell_type]
+            features.update({
+                f'{cell_type}_count': cell_count[cell_type]
+            })
             features.update(self.compute_statistics(df, cell_type, remove_outliers=True))
 
-        features.update({
-            'I_Num': cell_count['I'],
-            'S_Num': cell_count['S'],
-            'T_Num': cell_count['T'],
-            'I_Ratio': cell_count['I'] / cell_sum,
-            'S_Ratio': cell_count['S'] / cell_sum,
-            'T_Ratio': cell_count['T'] / cell_sum
-        })
-
+        if len(self.cell_types) > 1:
+            for cell_type in self.cell_types:
+                features.update({
+                    f'{cell_type}_ratio': cell_count[cell_type] / cell_sum,
+                })
         return pd.DataFrame(features, index=[0])
 
     def extract_triangle_features(self):
         triangle_feature = {}
-        polygon_area = {}
         for cell_type in self.cell_types:
             df = self.read_csv_for_type(cell_type)
             df['Centroid'] = df['Centroid'].apply(lambda x: x[1:-1].split(','))
@@ -91,23 +89,6 @@ class FeatureExtractor:
             # Delaunay triangles features
             triangle_feats, polygons = get_triangle_feature_df(triangles, coords)
             triangle_feature.update(self.compute_statistics(triangle_feats, cell_type, remove_outliers=False))
-            # polygon features
-            polygon_area[cell_type] = polygons
-
-        p_I = polygon_area['I']
-        p_S = polygon_area['S']
-        p_T = polygon_area['T']
-
-        # calculate the intersection over union of polygons, this process may take some time
-        polygon_features = {
-            'I_in_T': intersect_ratio(p_I, p_T),
-            'I_in_S': intersect_ratio(p_I, p_S),
-            'S_in_T': intersect_ratio(p_S, p_T),
-            'S_in_I': intersect_ratio(p_S, p_I),
-            'T_in_S': intersect_ratio(p_T, p_S),
-            'T_in_I': intersect_ratio(p_T, p_I)
-        }
-        triangle_feature.update(polygon_features)
 
         return pd.DataFrame(triangle_feature, index=[0])
 
