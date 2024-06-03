@@ -4,10 +4,7 @@ import yaml
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
-from shapely.geometry import Polygon
-from shapely.ops import unary_union
 
-# do not show warnings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 
@@ -65,12 +62,6 @@ def get_triangle_feature(triangle):
     return area, perimeter, angle1, angle2, angle3
 
 
-def get_polygon_edges(triangles, coords):
-    triangles_polygons = [Polygon([coords[index] for index in triangle]) for triangle in triangles]
-    polygon = unary_union(triangles_polygons)
-    return polygon
-
-
 def get_triangle_feature_df(triangles, coords, threshold=3000):
     # calculate the area, perimeter and angles of all triangles
     area_list = []
@@ -89,7 +80,5 @@ def get_triangle_feature_df(triangles, coords, threshold=3000):
             angle_range = max(angle1, angle2, angle3) - min(angle1, angle2, angle3)
             angle_range_list.append(angle_range)
 
-    polygons = get_polygon_edges(valid_triangles, coords)
-
     return pd.DataFrame({'Triangle_Area': area_list, 'Triangle_Perimeter': perimeter_list,
-                         'Triangle_Angle_Range': angle_range_list}), polygons
+                         'Triangle_Angle_Range': angle_range_list})

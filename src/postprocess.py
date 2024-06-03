@@ -2,17 +2,8 @@ import pandas as pd
 import numpy as np
 
 from scipy.spatial import Delaunay
-from shapely.geometry import Polygon, MultiPolygon
 
 from src.utils import get_triangle_feature_df
-
-
-def intersect_ratio(p_a, p_b):
-    intersection = p_a.intersection(p_b)
-    if isinstance(intersection, Polygon):
-        return intersection.area / p_a.area
-    elif isinstance(intersection, MultiPolygon):
-        return sum([poly.area for poly in intersection]) / p_a.area
 
 
 class FeatureExtractor:
@@ -87,7 +78,7 @@ class FeatureExtractor:
             coords = np.array(df[['X', 'Y']])
             triangles = Delaunay(df[['X', 'Y']]).simplices.tolist()
             # Delaunay triangles features
-            triangle_feats, polygons = get_triangle_feature_df(triangles, coords)
+            triangle_feats = get_triangle_feature_df(triangles, coords)
             triangle_feature.update(self.compute_statistics(triangle_feats, cell_type, remove_outliers=False))
 
         return pd.DataFrame(triangle_feature, index=[0])
