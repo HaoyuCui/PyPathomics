@@ -1,3 +1,6 @@
+import logging
+import os.path
+
 import pandas as pd
 import numpy as np
 
@@ -13,10 +16,14 @@ class FeatureExtractor:
         self.feature_list = feature_list
         self.cell_types = cell_types
         self.statistic_types = statistic_types
-        assert len(self.statistic_types) > 0, 'static_types should not be empty!'
+        assert len(self.statistic_types) > 0, 'In config.yaml: static_types should not be empty!'
 
     def read_csv_for_type(self, cell_type):
-        return pd.read_csv(f'{self.buffer_dir}/{self.slide}_Feats_{cell_type}.csv')
+        buffer_file_path = f'{self.buffer_dir}/{self.slide}_Feats_{cell_type}.csv'
+        if not os.path.exists(buffer_file_path):
+            logging.error(f'File not found: {buffer_file_path}')
+            raise FileNotFoundError
+        return pd.read_csv(buffer_file_path)
 
     def compute_statistics(self, df, cell_type, remove_outliers):
         if remove_outliers:

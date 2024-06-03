@@ -1,1 +1,0 @@
-python main.py --json E:/hover-net-output/json --wsi D:/Data/endometrium_pathology/raw --buffer C:/Users/Ed/Downloads/buffer --ext .mrxs --output C:/Users/Ed/Downloads/output

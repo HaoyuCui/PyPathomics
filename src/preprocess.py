@@ -1,3 +1,4 @@
+import signal
 from collections import defaultdict
 from tqdm import tqdm
 from skimage.measure import regionprops
@@ -24,12 +25,15 @@ try:
     if os.name == 'nt':
         os.add_dll_directory(openslide_home)
     from openslide import OpenSlide
-    logging.info(f'OpenSlide loaded from: {openslide_home}')
 except Exception as e:
     logging.warning(f'Error in loading OpenSlide: {e}')
     exit(1)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
+
+def worker_initializer():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
 def getRegionPropFromContour(contour, bbox, extention=2):
@@ -132,8 +136,13 @@ def getMorphFeatures(name, contours, bboxes, desc, process_n=1):
         for batch in tqdm(range(0, vertex_len, batch_size)):
             p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
             args = [[ids, name[i], contours[i], bboxes[i]] for ids, i in enumerate(p_slice)]
-            with mp.Pool(process_n) as p:
-                ans = p.map(SingleMorphFeatures, args)
+            try:
+                with mp.Pool(process_n, initializer=worker_initializer) as p:
+                    ans = p.map(SingleMorphFeatures, args)
+            except KeyboardInterrupt:
+                p.terminate()
+                p.join()
+                raise KeyboardInterrupt
             for q_info in ans:
                 for k, v in zip(q_info.keys(), q_info.values()):
                     featuresDict[k] += v
@@ -241,8 +250,13 @@ def getGLCMFeatures(wsiPath, name, contours, bboxes, pad=2, level=0, process_n=1
         for batch in tqdm(range(0, vertex_len, batch_size)):
             p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
             args = [[ids, wsiPath, name[i], contours[i], bboxes[i], pad, level] for ids, i in enumerate(p_slice)]
-            with mp.Pool(process_n) as p:
-                ans = p.map(SingleGLCMFeatures, args)
+            try:
+                with mp.Pool(process_n, initializer=worker_initializer) as p:
+                    ans = p.map(SingleGLCMFeatures, args)
+            except KeyboardInterrupt:
+                p.terminate()
+                p.join()
+                raise KeyboardInterrupt
             for q_info in ans:
                 for k, v in zip(q_info.keys(), q_info.values()):
                     featuresDict[k] += v
@@ -307,6 +321,7 @@ def read_data_as_json(dat_path):
 
 
 def process(seg_path, wsi_path, output_path, level, feature_set, cell_types):
+    seg_path, wsi_path, output_path = str(seg_path), str(wsi_path), str(output_path)
     assert os.path.exists(seg_path) and os.path.isfile(seg_path), \
         f"json_path: {seg_path} is not allowed, please make sure it's a file and exists"
     assert os.path.exists(wsi_path) and os.path.isfile(wsi_path), \
