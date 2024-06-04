@@ -113,14 +113,14 @@ Optional Arguments:
 
 ##### Texture Features
 
-| Feature                                        | Description                                                                                                           |
-|------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| **ASM (Angular Second Moment)**                | Texture consistency, measuring the similarity between a pixel and its neighbors                                       |
-| **Contrast**                                   | Texture contrast, describing the intensity variation in the image                                                     |
-| **Correlation**                                | Texture correlation, measuring the similarity between a pixel and its neighbors                                       |
-| **Entropy**                                    | Texture entropy, representing the diversity of information in the image; higher values indicate more complex textures |
-| **Homogeneity**                                | Texture homogeneity, assessing the consistency of the texture                                                         |
-| **IntensityMean** / *Std** / **Max** / **Min** | Mean, standard deviation, maximum, and minimum of the texture intensity                                               |
+| Feature                                         | Description                                                                                                           |
+|-------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **ASM (Angular Second Moment)**                 | Texture consistency, measuring the similarity between a pixel and its neighbors                                       |
+| **Contrast**                                    | Texture contrast, describing the intensity variation in the image                                                     |
+| **Correlation**                                 | Texture correlation, measuring the similarity between a pixel and its neighbors                                       |
+| **Entropy**                                     | Texture entropy, representing the diversity of information in the image; higher values indicate more complex textures |
+| **Homogeneity**                                 | Texture homogeneity, assessing the consistency of the texture                                                         |
+| **IntensityMean** / **Std** / **Max** / **Min** | Mean, standard deviation, maximum, and minimum of the texture intensity                                               |
 
 ##### Delaunay Triangle Spatial Features
 
