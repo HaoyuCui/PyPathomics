@@ -42,6 +42,11 @@ Where,
 - `cell_types`: Types of cells to analyze. Options: `I` (inflammatory), `S`, (stromal), `T` (tumor).
 - `statistic-types`: Types of statistics to calculate. Options: `basic`, `distribution`.
 
+| statistics-types | e.g.                                             |
+|------------------|--------------------------------------------------|
+| basic            | mean, std                                        |
+| distribution     | Q25, Q75, median, IQR, range, skewness, kurtosis |
+
 
 #### Options for main.py
 
@@ -81,46 +86,50 @@ Optional Arguments:
     ```
 
 
-### Feature set:
-
 #### Basic Cell Info
 
-- **Name**: Identifier for the cell
-- **Centroid**: Position of the cell's centroid
-- **Cell Type**: Information about the cell type
-- **Num**: Reflects the number of cells of this type of the slide
-- **Ratio**: Reflects the proportion of cells of this type
+| Feature       | Description                                            |
+|---------------|--------------------------------------------------------|
+| **Name**      | Identifier for the cell                                |
+| **Centroid**  | Position of the cell's centroid                        |
+| **Cell Type** | Information about the cell type                        |
+| **Num**       | Reflects the number of cells of this type of the slide |
+| **Ratio**     | Reflects the proportion of cells of this type          |
 
 ##### Morphological Features
 
-- **Morph_Area**: Area of the cell, indicating cell size
-- **Morph_AreaBbox**: Area of the minimum bounding rectangle around the cell
-- **Morph_CellEccentricities**: Eccentricity of the cell
-- **Morph_Circularity**: Roundness of the cell
-- **Morph_Elongation**: Elongation rate of the cell
-- **Morph_Extent**: Proportion of the cell occupying its bounding rectangle
-- **Morph_MajorAxisLength/Morph_MinorAxisLength**: Lengths of the major and minor axes of the fitted ellipse for the cell
-- **Morph_Perimeter**: Perimeter of the cell boundary
-- **Morph_Solidity**: Ratio of the cell area to its convex hull area
-- **Morph_CurvMean/Morph_CurvStd/Morph_CurvMax/Morph_CurvMin**: Mean, standard deviation, maximum, and minimum of the cell boundary curvature
+| Feature                                         | Description                                                                   |
+|-------------------------------------------------|-------------------------------------------------------------------------------|
+| **Area**                                        | Area of the cell, indicating cell size                                        |
+| **AreaBbox**                                    | Area of the minimum bounding rectangle around the cell                        |
+| **CellEccentricities**                          | Eccentricity of the cell                                                      |
+| **Circularity**                                 | Roundness of the cell                                                         |
+| **Elongation**                                  | Elongation rate of the cell                                                   |
+| **Extent**                                      | Proportion of the cell occupying its bounding rectangle                       |
+| **MajorAxisLength** / **Morph_MinorAxisLength** | Lengths of the major and minor axes of the fitted ellipse for the cell        |
+| **Perimeter**                                   | Perimeter of the cell boundary                                                |
+| **Solidity**                                    | Ratio of the cell area to its convex hull area                                |
+| **CurvMean** / **Std** / **Max** / **Min**      | Mean, standard deviation, maximum, and minimum of the cell boundary curvature |
 
 ##### Texture Features
 
-- **Texture_ASM (Angular Second Moment)**: Texture consistency, measuring the similarity between a pixel and its neighbors.
-- **Texture_Contrast**: Texture contrast, describing the intensity variation in the image.
-- **Texture_Correlation**: Texture correlation, measuring the similarity between a pixel and its neighbors.
-- **Texture_Entropy**: Texture entropy, representing the diversity of information in the image; higher values indicate more complex textures.
-- **Texture_Homogeneity**: Texture homogeneity, assessing the consistency of the texture.
-- **Texture_IntensityMean/Texture_IntensityStd/Texture_IntensityMax/Texture_IntensityMin**: Mean, standard deviation, maximum, and minimum of the texture intensity
+| Feature                                        | Description                                                                                                           |
+|------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| **ASM (Angular Second Moment)**                | Texture consistency, measuring the similarity between a pixel and its neighbors                                       |
+| **Contrast**                                   | Texture contrast, describing the intensity variation in the image                                                     |
+| **Correlation**                                | Texture correlation, measuring the similarity between a pixel and its neighbors                                       |
+| **Entropy**                                    | Texture entropy, representing the diversity of information in the image; higher values indicate more complex textures |
+| **Homogeneity**                                | Texture homogeneity, assessing the consistency of the texture                                                         |
+| **IntensityMean** / *Std** / **Max** / **Min** | Mean, standard deviation, maximum, and minimum of the texture intensity                                               |
 
 ##### Delaunay Triangle Spatial Features
 
-- **Triangle_Area**: Area of the Delaunay triangle around the cell
-- **Triangle_Perimeter**: Perimeter of the Delaunay triangle around the cell
-- **Triangle_Angle_Range**: Difference between the maximum and minimum angles of the Delaunay triangle around the cell
-- **IoT**: Ratio of the Voronoi area of inflammatory cells to tumor cells
-- **IoS**: Ratio of the Voronoi area of inflammatory cells to stroma cells
-- **SoT**: Ratio of the Voronoi area of stroma cells to tumor cells
+| Feature         | Description                                                                                |
+|-----------------|--------------------------------------------------------------------------------------------|
+| **Area**        | Area of the Delaunay triangle around the cell                                              |
+| **Perimeter**   | Perimeter of the Delaunay triangle around the cell                                         |
+| **Angle_Range** | Difference between the maximum and minimum angles of the Delaunay triangle around the cell |
+
 
 
 

@@ -46,6 +46,8 @@ class FeatureExtractor:
                     f'{cell_type}_{col}_Q75': df[col].quantile(0.75),
                     f'{cell_type}_{col}_IQR': df[col].quantile(0.75) - df[col].quantile(0.25),
                     f'{cell_type}_{col}_range': df[col].max() - df[col].min(),
+                    f'{cell_type}_{col}_skew': df[col].skew(),
+                    f'{cell_type}_{col}_kurt': df[col].kurt()
                 })
             stats.update(stats_dict)
         return stats
