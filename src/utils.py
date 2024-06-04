@@ -8,10 +8,13 @@ import numpy as np
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
 
-def print_config(args):
-    logging.info("Configuration:")
+def print_config(args, configs):
+    logging.info("Arguments:")
     for arg in vars(args):
         print(f' - {arg}: {getattr(args, arg)}')
+    logging.info("Configuration:")
+    for key, value in configs.items():
+        print(f' - {key}: {value}')
 
 
 # for config reading

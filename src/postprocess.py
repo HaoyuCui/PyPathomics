@@ -102,3 +102,22 @@ class FeatureExtractor:
             return self.extract_triangle_features()
         elif 'Triangle' in self.feature_list and len(self.cell_types) >= 2:
             return pd.concat([self.extract_features(), self.extract_triangle_features()], axis=1)
+
+
+# Core function
+def postprocess_files(args, configs):
+    process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
+    df_feats_list = []
+    for i, slide in enumerate(process_queue):
+        logging.info(f'Phase 2 Postprocessing \t {i + 1} / {len(process_queue)} \t {slide} ')
+        slide = slide.stem
+        extractor = FeatureExtractor(slide, args.buffer, feature_list=configs['feature-set'],
+                                                 cell_types=configs['cell-types'],
+                                                 statistic_types=configs['statistic-types'])
+        slide_feats = extractor.extract()
+        slide_feats['slide'] = slide
+        df_feats_list.append(slide_feats)
+
+    df_feats = pd.concat(df_feats_list, ignore_index=True)
+    cols = ['slide'] + [col for col in df_feats.columns if col != 'slide']
+    return df_feats[cols]

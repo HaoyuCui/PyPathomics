@@ -358,3 +358,33 @@ def process(seg_path, wsi_path, output_path, level, feature_set, cell_types):
         vertex_csvfile = os.path.join(output_path, sample_name + '_Feats_' + i + '.csv')
         save_index = vertex_dataframe['CellType'].isin(cellType_save[i]).values
         vertex_dataframe.iloc[save_index].to_csv(vertex_csvfile, index=False, columns=col_dist[i])
+
+
+# Core function
+def preprocess_files(args, configs):
+    process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
+    output_dir = args.buffer
+    ext = args.ext.split('.')[-1]
+    if len(process_queue) > 1 and ext is None:
+        logging.warning('No file extension provided, use --ext to specify the extension.')
+    elif len(process_queue) == 1 and ext is None:
+        ext = process_queue[0].suffix[1:]
+    logging.info(f'Total {len(process_queue)} files to process.')
+
+    for i, seg_path in enumerate(process_queue):
+        logging.info(f'Phase 1 Preprocessing \t {i + 1} / {len(process_queue)} \t  {seg_path} ')
+        slide_name = seg_path.stem
+        wsi_path = args.wsi / f"{slide_name}.{ext}"
+        output_path = output_dir / f"{slide_name}_Feats_T.csv"
+
+        if args.auto_skip and output_path.exists():
+            logging.info(f'Skip {slide_name} as it is already processed.')
+            continue
+
+        process(seg_path, wsi_path, output_dir, args.level, configs['feature-set'], configs['cell-types'])
+
+
+def run_wsi(args, configs):
+    logging.info(f'Phase 1 Preprocessing \t 1 / 1 \t {args.seg} ')
+    process(args.seg, args.wsi, args.buffer, args.level, configs['feature-set'], configs['cell-types'])
+
