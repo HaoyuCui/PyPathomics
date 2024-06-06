@@ -71,7 +71,7 @@ Optional Arguments:
 ### Usage: 
 
 <div align=center>
-<img width="750" alt="image" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/9bcd4ee4-ae50-450e-8c45-3ca86ccd5f53">
+ <img width="750" alt="image" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/54fa558b-76e9-44e5-9542-bf9637a70848">
 </div>
 
 1. Make sure you run the [Hover-Net's wsi seg](https://github.com/vqdang/hover_net) or [Cerberus' wsi seg](https://github.com/TissueImageAnalytics/cerberus) and get the seg files. 
