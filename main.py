@@ -24,7 +24,8 @@ def parse_arguments():
     parser.add_argument('--ext', type=str, default='svs', help='WSI file extension, default: svs')
     parser.add_argument('--level', type=int, default=0, help='WSI level to process, default: 0')
     parser.add_argument('--buffer', type=Path, default=None, help='Output buffer for preprocess')
-    parser.add_argument('--output', type=Path, required=True, help='Output path for the run (suffix: xlsx/csv)')
+    parser.add_argument('--output', type=Path, default='pypathomics-result.csv',
+                        help='Output file path for the run (suffix: xlsx/csv)')
     return parser.parse_args()
 
 

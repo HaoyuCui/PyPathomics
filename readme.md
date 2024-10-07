@@ -68,11 +68,7 @@ Optional Arguments:
     --level      Detail level of the WSI to analyze (default: 0)
 ```
 
-### Usage: 
-
-<div align=center>
- <img width="750" alt="image" src="https://github.com/HaoyuCui/PyPathomics/assets/75052311/54fa558b-76e9-44e5-9542-bf9637a70848">
-</div>
+### Usage:
 
 1. Make sure you run the [Hover-Net's wsi seg](https://github.com/vqdang/hover_net) or [Cerberus' wsi seg](https://github.com/TissueImageAnalytics/cerberus) and get the seg files. 
 
