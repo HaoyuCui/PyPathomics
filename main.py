@@ -1,10 +1,8 @@
 import argparse
 import os.path
 from pathlib import Path
-import pandas as pd
 import logging
 
-from src import postprocess, preprocess
 from src.postprocess import postprocess_files
 from src.preprocess import preprocess_files, run_wsi
 from src.utils import get_config, print_config
@@ -34,9 +32,13 @@ def main():
     configs = get_config()
 
     print_config(args, configs)
-    assert args.output.suffix in ['.xlsx', '.csv'], 'Output file should be in xlsx or csv format.'
-    assert len(os.listdir(args.buffer)) == 0, (f'Buffer directory {args.buffer} should be empty, or it may cause '
-                                               f'conflict.')
+    assert args.output.suffix in ['.xlsx', '.csv'], \
+        'Output file should be in xlsx or csv format. Directories are not supported.'
+
+    if os.listdir(args.buffer) != 0:
+        logging.warning(f'Buffer directory {args.buffer} is not empty, it may cause conflict. Continue? (y/N)')
+        if input().lower() != 'y':
+            return
 
     if not args.file_mode:
         preprocess_files(args, configs)

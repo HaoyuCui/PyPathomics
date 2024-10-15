@@ -4,15 +4,15 @@
 
 # PyPathomics
 
-> PyPathomics is an open-source software for gigapixel whole-slide image analysis.
+> PyPathomics is an open-source software for gigapixel whole-slide image analysis. Off-the-shelf and easy-to-use.
 
-The PyPathomics is under development. The current version is 0.1.0.
+The PyPathomics is under development. The current version is 0.5.0.
 
 Support for:
 - [x] Hover-Net
-[[Repo](https://github.com/vqdang/hover_net)] [[Paper](https://www.sciencedirect.com/science/article/abs/pii/S1361841519301045?via%3Dihub)] (Graham et al., 2019)
+[[Repo](https://github.com/vqdang/hover_net)] [[Paper](https://www.sciencedirect.com/science/article/abs/pii/S1361841519301045)] (Graham et al., 2019)
 
-- [x] Cerberus
+- [x] Cerberus (In Beta)
 [[Repo](https://github.com/TissueImageAnalytics/cerberus)] [[Paper](https://doi.org/10.1016/j.media.2022.102685)] (Graham et al., 2023)
 
 ## Installation
@@ -53,7 +53,7 @@ Where,
 Required Arguments:
 ```text
     --config     Specify the configuration file path
-    --seg       Path to the seg directory or file from Hover-Net(.json) or Cerberus(.dat)
+    --seg        Path to the segmentation directory or file from Hover-Net(.json) or Cerberus(.dat)
     --wsi        Path to the WSI directory or file
     --ext        WSI file extension (default: .svs)
     --buffer     Specify the output buffer dir for preprocessing
@@ -76,12 +76,12 @@ Optional Arguments:
 
 3. Analyze a Directory:
     ```bash
-    python main.py --seg /path/to/seg_dir --wsi /path/to/wsi_dir --buffer /path/to/buffer --ext .svs --output /path/to/output
+    python main.py --seg /path/to/seg_dir --wsi /path/to/wsi_dir --buffer /path/to/buffer --ext .svs --output /path/to/output.csv
     ```
 
 4. Analyze a Single File
     ```bash
-    python main.py -f --seg /path/to/seg_file --wsi /path/to/wsi_file --buffer /path/to/buffer --ext .svs --output /path/to/output
+    python main.py -f --seg /path/to/seg_file --wsi /path/to/wsi_file --buffer /path/to/buffer --ext .svs --output /path/to/output.csv
     ```
 
 
