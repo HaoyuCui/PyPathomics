@@ -16,6 +16,14 @@ Support for:
 - [x] Cerberus (In Beta)
 [[Repo](https://github.com/TissueImageAnalytics/cerberus)] [[Paper](https://doi.org/10.1016/j.media.2022.102685)] (Graham et al., 2023)
 
+## How it works?
+
+<div align=center>
+ <img width="980" alt="image" src="https://github.com/user-attachments/assets/510b8779-98e5-40c8-9c57-82fe32e1df77">
+</div>
+
+Get all **cell** and **slide-level** features directly through the cell segmentation file like Hover-Net's `.json` file.
+
 ## Installation
 
  ```bash
@@ -86,7 +94,7 @@ Optional Arguments:
     ```
 
 
-#### All-cell Info, stored in /path/to/buffer
+##### All-cell Info, stored in /path/to/buffer
 
 | Feature       | Description                                            |
 |---------------|--------------------------------------------------------|
@@ -94,7 +102,7 @@ Optional Arguments:
 | **Centroid**  | Position of the cell's centroid                        |
 | **Cell Type** | Information about the cell type                        |
 
-#### Slide Cell Ratio
+##### Slide Cell Ratio
 
 | Feature       | Description                                            |
 |---------------|--------------------------------------------------------|
