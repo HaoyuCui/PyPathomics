@@ -19,7 +19,7 @@ Support for:
 ## How it works?
 
 <div align=center>
- <img width="980" alt="image" src="https://github.com/user-attachments/assets/510b8779-98e5-40c8-9c57-82fe32e1df77">
+ <img width="960" alt="image" src="https://github.com/user-attachments/assets/11098570-4939-4bb9-9080-7e2dbe3bc68c">
 </div>
 
 Get all **cell** and **slide-level** features directly through the cell segmentation file like Hover-Net's `.json` file.
