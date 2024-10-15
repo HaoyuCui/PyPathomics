@@ -1,5 +1,0 @@
-# folder
-python main.py --seg F:\Data\endometrium_pathology\temp\input\dir --wsi D:\Data\endometrium_pathology\raw --buffer F:\Data\endometrium_pathology\temp\buffer --ext .mrxs --output F:\Data\endometrium_pathology\temp\ouput.csv
-
-# file
-python main.py  -f --seg E:\hover-net-output\json\2020-45199001.json --wsi D:\Data\endometrium_pathology\raw\2020-45199001.mrxs --buffer F:\Data\endometrium_pathology\temp\buffer --ext .mrxs --output F:\Data\endometrium_pathology\temp\ouput.csv

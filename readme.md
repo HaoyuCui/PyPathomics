@@ -6,7 +6,8 @@
 
 > PyPathomics is an open-source software for gigapixel whole-slide image analysis. Off-the-shelf and easy-to-use.
 
-The PyPathomics is under development. The current version is 0.5.0.
+The PyPathomics is under development. The current version is 1.0
+This is a simplified version of [[sc_MTOP](https://github.com/fuscc-deep-path/sc_MTOP)] [[Paper](https://www.nature.com/articles/s41467-023-42504-y)]
 
 Support for:
 - [x] Hover-Net
@@ -30,7 +31,7 @@ pip install -r requirements.txt
 #### Options for config.yaml
 
 ```yaml
-   openslide-home: path\to\openslide-home
+   openslide-home: path\to\openslide-home # for Windows only
    feature-set: ['Morph', 'Texture', 'Triangle']
    cell_types: ['I', 'S', 'T']
    statistic-types: ['basic', 'distribution']
@@ -85,17 +86,21 @@ Optional Arguments:
     ```
 
 
-#### Basic Cell Info
+#### All-cell Info, stored in /path/to/buffer
 
 | Feature       | Description                                            |
 |---------------|--------------------------------------------------------|
 | **Name**      | Identifier for the cell                                |
 | **Centroid**  | Position of the cell's centroid                        |
 | **Cell Type** | Information about the cell type                        |
-| **Num**       | Reflects the number of cells of this type of the slide |
+
+#### Slide Cell Ratio
+
+| Feature       | Description                                            |
+|---------------|--------------------------------------------------------|
 | **Ratio**     | Reflects the proportion of cells of this type          |
 
-##### Morphological Features
+##### Slide Morphological Features
 
 | Feature                                         | Description                                                                   |
 |-------------------------------------------------|-------------------------------------------------------------------------------|
@@ -129,6 +134,20 @@ Optional Arguments:
 | **Perimeter**   | Perimeter of the Delaunay triangle around the cell                                         |
 | **Angle_Range** | Difference between the maximum and minimum angles of the Delaunay triangle around the cell |
 
+
+## Citation
+    
+ ```bibtex
+   @software{pypathomics,
+     author       = {HY Cui and XX Wang and J Xu and DP Chen},
+     title        = {PyPathomics},
+     year         = 2024,
+     publisher    = {GitHub},
+     url          = {https://github.com/HaoyuCui/PyPathomics},
+     version      = {1.0},
+   }
+
+ ```
 
 
 
