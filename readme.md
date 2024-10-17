@@ -4,10 +4,17 @@
 
 # PyPathomics
 
-> PyPathomics is an open-source software for gigapixel whole-slide image analysis. Off-the-shelf and easy-to-use.
+<a href="https://blog.csdn.net/CalvinTri"> 
+  <img align="right", src="https://img.shields.io/badge/License-GPL-blue.svg">
+</a>
 
-The PyPathomics is under development. The current version is 1.0
-This is a simplified version of [[sc_MTOP](https://github.com/fuscc-deep-path/sc_MTOP)] [[Paper](https://www.nature.com/articles/s41467-023-42504-y)]
+<a href="https://aim.nuist.edu.cn/"> 
+  <img align="right", src="https://img.shields.io/static/v1?label=Org&message=iMIC&color=green"/>
+</a>
+
+PyPathomics is an open-source software for gigapixel whole-slide image analysis. Off-the-shelf and easy-to-use.
+
+Currently under development. This is a simplified version of [[sc_MTOP](https://github.com/fuscc-deep-path/sc_MTOP)] [[Paper](https://www.nature.com/articles/s41467-023-42504-y)]
 
 Support for:
 - [x] Hover-Net
