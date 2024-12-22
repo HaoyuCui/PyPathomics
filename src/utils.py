@@ -1,4 +1,5 @@
 import logging
+import os.path
 
 import yaml
 import pandas as pd
@@ -32,7 +33,12 @@ def read_yaml(file_path):
 
 
 def get_config():
-    return read_yaml('config.yaml')
+    if os.path.exists('config.yaml'):
+        return read_yaml('config.yaml')
+    elif os.path.exists('../config.yaml'):
+        return read_yaml('../config.yaml')
+    else:
+        raise FileNotFoundError("Configuration file not found: config.yaml")
 
 
 # for triangle features

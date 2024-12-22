@@ -36,6 +36,58 @@ def worker_initializer():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
+def _fractal_dimension(Z):
+    """
+    Calculate the fractal dimension of an object (boundary complexity).
+
+    Source: https://gist.github.com/rougier/e5eafc276a4e54f516ed5559df4242c0
+
+    From https://en.wikipedia.org/wiki/Minkowski–Bouligand_dimension ...
+    In fractal geometry, the Minkowski–Bouligand dimension, also known as
+    Minkowski dimension or box-counting dimension, is a way of determining the
+    fractal dimension of a set S in a Euclidean space Rn, or more generally in
+    a metric space (X, d).
+
+    """
+    # Only for 2d binary image
+    assert len(Z.shape) == 2
+    Z = Z > 0
+
+    # From https://github.com/rougier/numpy-100 (#87)
+    def boxcount(arr, k):
+        S = np.add.reduceat(
+            np.add.reduceat(arr, np.arange(0, arr.shape[0], k), axis=0),
+            np.arange(0, arr.shape[1], k),
+            axis=1)
+        # We count non-empty (0) and non-full boxes (k*k)
+        return len(np.where((S > 0) & (S < k * k))[0])
+
+    # Minimal dimension of image
+    p = min(Z.shape)
+
+    # Greatest power of 2 less than or equal to p
+    n = 2 ** np.floor(np.log(p) / np.log(2))
+
+    # Extract the exponent
+    n = int(np.log(n) / np.log(2))
+
+    # Build successive box sizes (from 2**n down to 2**1)
+    sizes = 2 ** np.arange(n, 1, -1)
+
+    # Actual box counting with decreasing size
+    counts = []
+    for size in sizes:
+        counts.append(boxcount(Z, size))
+
+    # Fit the successive log(sizes) with log (counts)
+    coeffs = [0]
+    if len(counts):
+        try:
+            coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
+        except TypeError:
+            pass
+    return -coeffs[0]
+
 def getRegionPropFromContour(contour, bbox, extention=2):
     (left, top), (right, bottom) = bbox
     height, width = bottom - top, right - left
@@ -48,6 +100,7 @@ def getRegionPropFromContour(contour, bbox, extention=2):
     contour[:, 1] = contour[:, 1] - top + extention
     cv2.drawContours(image, [contour], 0, 1, -1)
     regionProp = regionprops(image)[0]
+    regionProp.fractal_dim = _fractal_dimension(image)
     return regionProp
 
 
@@ -121,6 +174,7 @@ def SingleMorphFeatures(args):
         featuresDict['CurvStd'] += [curvStd]
         featuresDict['CurvMax'] += [curvMax]
         featuresDict['CurvMin'] += [curvMin]
+        featuresDict['FractalDim'] += [regionProps.fractal_dim]
 
     return featuresDict
 
@@ -388,3 +442,7 @@ def run_wsi(args, configs):
     logging.info(f'Phase 1 Preprocessing \t 1 / 1 \t {args.seg} ')
     process(args.seg, args.wsi, args.buffer, args.level, configs['feature-set'], configs['cell-types'])
 
+
+if __name__ == '__main__':
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Morph'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Morph'], cell_types=['I', 'S', 'T'])
