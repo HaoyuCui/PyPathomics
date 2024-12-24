@@ -11,8 +11,15 @@ import igraph as ig
 import json
 import logging
 import joblib
+import matplotlib.pyplot as plt
+import time
+import scipy.stats
 
 import multiprocessing as mp
+
+from skimage.transform import rescale
+from skimage.feature import canny
+
 
 try:
     mp.set_start_method('spawn')
@@ -30,6 +37,17 @@ except Exception as e:
     exit(1)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
+
+# for debug
+def visualize_image(image, fractal_dim):
+    plt.imshow(image, cmap='gray')
+    plt.title(f'fractal_dim: {fractal_dim:.6f}')
+    plt.xticks([])
+    plt.yticks([])
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    plt.savefig(f'image_{timestamp}.png')
+    plt.show()
 
 
 def worker_initializer():
@@ -88,7 +106,11 @@ def _fractal_dimension(Z):
             pass
     return -coeffs[0]
 
-def getRegionPropFromContour(contour, bbox, extention=2):
+def _fractal_resize(Z, scale=2):
+    return rescale(Z, scale, anti_aliasing=False)
+
+
+def getRegionPropFromContour(contour, bbox, extention=2, return_fractal_dim=True):
     (left, top), (right, bottom) = bbox
     height, width = bottom - top, right - left
     # image = np.zeros((height + extention * 2, width + extention * 2), dtype=np.uint8)
@@ -100,7 +122,8 @@ def getRegionPropFromContour(contour, bbox, extention=2):
     contour[:, 1] = contour[:, 1] - top + extention
     cv2.drawContours(image, [contour], 0, 1, -1)
     regionProp = regionprops(image)[0]
-    regionProp.fractal_dim = _fractal_dimension(image)
+    if return_fractal_dim:
+        regionProp.fractal_dim = _fractal_dimension(image)
     return regionProp
 
 
@@ -259,6 +282,112 @@ def mygreycoprops(P):
     return SumAverage, Entropy, SumVariance, Average, Variance
 
 
+def compute_gradient_features(im_intensity,
+                              num_hist_bins=10, rprops=None):
+    """Calculates gradient features from an intensity image.
+
+    Parameters
+    ----------
+    im_label : array_like
+        A labeled mask image wherein intensity of a pixel is the ID of the
+        object it belongs to. Non-zero values are considered to be foreground
+        objects.
+    im_intensity : array_like
+        Intensity image
+    num_hist_bins: int, optional
+        Number of bins used to computed the gradient histogram of an object.
+        Histogram is used to energy and entropy features. Default is 10.
+    rprops : output of skimage.measure.regionprops, optional
+        rprops = skimage.measure.regionprops( im_label ). If rprops is not
+        passed then it will be computed inside which will increase the
+        computation time.
+
+    Returns
+    -------
+    fdata: pandas.DataFrame
+        A pandas dataframe containing the gradient features listed below for
+        each object/label.
+
+    Notes
+    -----
+    List of gradient features computed by this function:
+
+    Gradient.Mag.Mean : float
+        Mean of gradient data.
+
+    Gradient.Mag.Std : float
+        Standard deviation of gradient data.
+
+    Gradient.Mag.Skewness : float
+        Skewness of gradient data. Value is 0 when all values are equal.
+
+    Gradient.Mag.Kurtosis : float
+        Kurtosis of gradient data. Value is -3 when all values are equal.
+
+    Gradient.Mag.HistEnergy : float
+        Energy of the gradient magnitude histogram of object pixels
+
+    Gradient.Mag.HistEnergy : float
+        Entropy of the gradient magnitude histogram of object pixels.
+
+    Gradient.Canny.Sum : float
+        Sum of canny filtered gradient data.
+
+    Gradient.Canny.Mean : float
+        Mean of canny filtered gradient data.
+
+    References
+    ----------
+    .. [#] Daniel Zwillinger and Stephen Kokoska. "CRC standard probability
+       and statistics tables and formulae," Crc Press, 1999.
+
+    """
+
+    Gx, Gy = np.gradient(im_intensity)
+    diffG = np.sqrt(Gx**2 + Gy**2)
+    cannyG = canny(im_intensity)
+
+    # get gradients of object pixels
+    pixelGradients = np.sort(diffG[rprops.coords[:, 0], rprops.coords[:, 1]])
+
+    # Compute intensity histogram
+    hist, bins = np.histogram(pixelGradients, bins=num_hist_bins)
+    prob = hist / np.sum(hist, dtype=np.float32)
+
+    # Canny edges for the object
+    bw_canny = cannyG[rprops.coords[:, 0], rprops.coords[:, 1]]
+    canny_sum = np.sum(bw_canny).astype('float')
+
+    # Create DataFrame
+    feature_list = [
+        'Gradient.Mag.Mean',
+        'Gradient.Mag.Std',
+        'Gradient.Mag.Skewness',
+        'Gradient.Mag.Kurtosis',
+        'Gradient.Mag.HistEntropy',
+        'Gradient.Mag.HistEnergy',
+        'Gradient.Canny.Sum',
+        'Gradient.Canny.Mean',
+    ]
+
+    # Aggregate features
+    features = [
+        np.mean(pixelGradients),  # Mean
+        np.std(pixelGradients),  # Std
+        scipy.stats.skew(pixelGradients),  # Skewness
+        scipy.stats.kurtosis(pixelGradients),  # Kurtosis
+        scipy.stats.entropy(prob),  # HistEntropy
+        np.sum(prob**2),  # HistEnergy
+        canny_sum,  # Canny.Sum
+        canny_sum / len(pixelGradients),  # Canny.Mean
+    ]
+
+    # fdata = pd.DataFrame(data, columns=feature_list)
+    featureDict = zip(feature_list, features)
+
+    return featureDict
+
+
 def SingleGLCMFeatures(args):
     ids, wsiPath, name, contours, bboxes, pad, level = args
     slidePtr = OpenSlide(wsiPath)
@@ -290,6 +419,12 @@ def SingleGLCMFeatures(args):
         featuresDict['IntensityStd'] += [cellImg[cellMask].std()]
         featuresDict['IntensityMax'] += [cellImg[cellMask].max().astype('int16')]
         featuresDict['IntensityMin'] += [cellImg[cellMask].min().astype('int16')]
+
+        edgeFeature = compute_gradient_features(cellImg, rprops=getRegionPropFromContour(contour, bbox))
+
+        for k, v in edgeFeature:
+            featuresDict[k] += [v]
+
     return featuresDict
 
 
@@ -444,5 +579,5 @@ def run_wsi(args, configs):
 
 
 if __name__ == '__main__':
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Morph'], cell_types=['I', 'S', 'T'])
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Morph'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture'], cell_types=['I', 'S', 'T'])
