@@ -54,6 +54,29 @@ def worker_initializer():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
+def process_features_in_parallel(feature_func, args_list, process_n=1):
+    if process_n == 1:
+        return feature_func(args_list[0])
+    else:
+        featuresDict = defaultdict(list)
+        vertex_len = len(args_list)
+        batch_size = vertex_len // 8
+        for batch in tqdm(range(0, vertex_len, batch_size)):
+            p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
+            args = [args_list[i] for i in p_slice]
+            try:
+                with mp.Pool(process_n, initializer=worker_initializer) as p:
+                    ans = p.map(feature_func, args)
+            except KeyboardInterrupt:
+                p.terminate()
+                p.join()
+                raise KeyboardInterrupt
+            for q_info in ans:
+                for k, v in zip(q_info.keys(), q_info.values()):
+                    featuresDict[k] += v
+        return featuresDict
+
+
 def _fractal_dimension(Z):
     """
     Calculate the fractal dimension of an object (boundary complexity).
@@ -420,11 +443,6 @@ def SingleGLCMFeatures(args):
         featuresDict['IntensityMax'] += [cellImg[cellMask].max().astype('int16')]
         featuresDict['IntensityMin'] += [cellImg[cellMask].min().astype('int16')]
 
-        edgeFeature = compute_gradient_features(cellImg, rprops=getRegionPropFromContour(contour, bbox))
-
-        for k, v in edgeFeature:
-            featuresDict[k] += [v]
-
     return featuresDict
 
 
@@ -442,6 +460,49 @@ def getGLCMFeatures(wsiPath, name, contours, bboxes, pad=2, level=0, process_n=1
             try:
                 with mp.Pool(process_n, initializer=worker_initializer) as p:
                     ans = p.map(SingleGLCMFeatures, args)
+            except KeyboardInterrupt:
+                p.terminate()
+                p.join()
+                raise KeyboardInterrupt
+            for q_info in ans:
+                for k, v in zip(q_info.keys(), q_info.values()):
+                    featuresDict[k] += v
+    return featuresDict
+
+
+def EdgeFeatures(args):
+    ids, wsiPath, name, contours, bboxes, pad, level = args
+    slidePtr = OpenSlide(wsiPath)
+    # Use wsipath as parameter because multiprocess can't use pointer like the object OpenSlide() as parameter
+    featuresDict = defaultdict(list)
+    featuresDict['name'] = name
+    for contour, bbox in zip(contours, bboxes):
+        cellImg = getCellImg(slidePtr, bbox, pad, level)
+        cellMask = getCellMask(contour, bbox, pad).astype(np.bool_)
+        cellImg[~cellMask] = 0
+
+        edgeFeature = compute_gradient_features(cellImg, rprops=getRegionPropFromContour(contour, bbox))
+
+        for k, v in edgeFeature:
+            featuresDict[k] += [v]
+
+    return featuresDict
+
+
+def getEdgeFeatures(wsiPath, name, contours, bboxes, pad=2, level=0, process_n=1):
+    name = [int(i) for i in name]
+    if process_n == 1:
+        return EdgeFeatures([0, wsiPath, name, contours, bboxes, pad, level])
+    else:
+        featuresDict = defaultdict(list)
+        vertex_len = len(name)
+        batch_size = vertex_len // 8
+        for batch in tqdm(range(0, vertex_len, batch_size)):
+            p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
+            args = [[ids, wsiPath, name[i], contours[i], bboxes[i], pad, level] for ids, i in enumerate(p_slice)]
+            try:
+                with mp.Pool(process_n, initializer=worker_initializer) as p:
+                    ans = p.map(EdgeFeatures, args)
             except KeyboardInterrupt:
                 p.terminate()
                 p.join()
@@ -491,6 +552,13 @@ def basicFeatureExtraction(
         for k, v in zip(GLCMFeats.keys(), GLCMFeats.values()):
             if k != 'name':
                 globalGraph.vs[GLCMFeats['name']]['Texture_' + k] = v
+
+    if 'Edge' in featureSet or 'edge' in featureSet:
+        logging.info('Getting Edge features')
+        EdgeFeats = getEdgeFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=8)
+        for k, v in zip(EdgeFeats.keys(), EdgeFeats.values()):
+            if k != 'name':
+                globalGraph.vs[EdgeFeats['name']]['Edge_' + k] = v
 
     return globalGraph
 
@@ -579,5 +647,5 @@ def run_wsi(args, configs):
 
 
 if __name__ == '__main__':
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture'], cell_types=['I', 'S', 'T'])
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture', 'Edge'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture', 'Edge·'], cell_types=['I', 'S', 'T'])
