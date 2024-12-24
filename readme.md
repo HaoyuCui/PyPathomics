@@ -4,11 +4,11 @@
 
 # PyPathomics
 
-<a href="https://aim.nuist.edu.cn/"> 
+<a href="https://github.com/HaoyuCui/PyPathomics?tab=GPL-3.0-1-ov-file"> 
   <img align="right", src="https://img.shields.io/badge/License-GPL-blue.svg">
 </a>
 
-<a href="https://github.com/HaoyuCui/PyPathomics?tab=GPL-3.0-1-ov-file"> 
+<a href="https://imic.nuist.edu.cn/"> 
   <img align="right", src="https://img.shields.io/static/v1?label=Org&message=iMIC&color=green"/>
 </a>
 
