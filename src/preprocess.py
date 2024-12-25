@@ -38,16 +38,18 @@ except Exception as e:
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 
+THREAD = 8
+
 
 # for debug
-def visualize_image(image, fractal_dim):
-    plt.imshow(image, cmap='gray')
-    plt.title(f'fractal_dim: {fractal_dim:.6f}')
+def visualize_image(image, desc):
+    plt.imshow(image)
+    plt.title(f'{desc}')
     plt.xticks([])
     plt.yticks([])
-    timestamp = time.strftime("%Y%m%d-%H%M%S")
-    plt.savefig(f'image_{timestamp}.png')
-    plt.show()
+    plt.savefig(f'{desc}.png')
+    # plt.show()
+    plt.close()
 
 
 def worker_initializer():
@@ -249,12 +251,21 @@ def getMorphFeatures(name, contours, bboxes, desc, process_n=1):
     return featuresDict
 
 
-def getCellImg(slidePtr, bbox, pad=2, level=0):
+def getCellGrayImg(slidePtr, bbox, pad=2, level=0):
     bbox = np.array(bbox)
     bbox[0] = bbox[0] - pad
     bbox[1] = bbox[1] + pad
     cellImg = slidePtr.read_region(location=bbox[0] * 2 ** level, level=level, size=bbox[1] - bbox[0])
     cellImg = np.array(cv2.cvtColor(np.asarray(cellImg), cv2.COLOR_RGB2GRAY))
+    return cellImg
+
+
+def getCellRGBImg(slidePtr, bbox, pad=2, level=0):
+    bbox = np.array(bbox)
+    bbox[0] = bbox[0] - pad
+    bbox[1] = bbox[1] + pad
+    cellImg = slidePtr.read_region(location=bbox[0] * 2 ** level, level=level, size=bbox[1] - bbox[0])
+    cellImg = np.array(cellImg)
     return cellImg
 
 
@@ -418,7 +429,7 @@ def SingleGLCMFeatures(args):
     featuresDict = defaultdict(list)
     featuresDict['name'] = name
     for contour, bbox in zip(contours, bboxes):
-        cellImg = getCellImg(slidePtr, bbox, pad, level)
+        cellImg = getCellGrayImg(slidePtr, bbox, pad, level)
         cellMask = getCellMask(contour, bbox, pad).astype(np.bool_)
         cellImg[~cellMask] = 0
 
@@ -477,14 +488,20 @@ def EdgeFeatures(args):
     featuresDict = defaultdict(list)
     featuresDict['name'] = name
     for contour, bbox in zip(contours, bboxes):
-        cellImg = getCellImg(slidePtr, bbox, pad, level)
+        cellRGBImg = getCellRGBImg(slidePtr, bbox, pad, level)
+        cellGrayImg = getCellGrayImg(slidePtr, bbox, pad, level)
         cellMask = getCellMask(contour, bbox, pad).astype(np.bool_)
-        cellImg[~cellMask] = 0
+        cellRGBImg[~cellMask] = 0
+        cellGrayImg[~cellMask] = 0
 
-        edgeFeature = compute_gradient_features(cellImg, rprops=getRegionPropFromContour(contour, bbox))
+        edgeFeature = compute_gradient_features(cellGrayImg, rprops=getRegionPropFromContour(contour, bbox))
 
         for k, v in edgeFeature:
             featuresDict[k] += [v]
+
+        # desc = (f'HistEntropy: {featuresDict["Gradient.Mag.HistEntropy"][0]:.3f} '
+        # f'HistEnergy: {featuresDict["Gradient.Mag.HistEnergy"][0]:.3f} '
+        # f'Mag.Std: {featuresDict["Gradient.Mag.Std"][0]:.3f}')
 
     return featuresDict
 
@@ -541,21 +558,21 @@ def basicFeatureExtraction(
 
     if 'Morph' in featureSet or 'morph' in featureSet:
         logging.info('Getting Morph features')
-        morphFeats = getMorphFeatures(names, contours, bboxes, 'MorphFeatures', process_n=8)
+        morphFeats = getMorphFeatures(names, contours, bboxes, 'MorphFeatures', process_n=THREAD)
         for k, v in zip(morphFeats.keys(), morphFeats.values()):
             if k != 'name':
                 globalGraph.vs[morphFeats['name']]['Morph_' + k] = v
 
     if 'Texture' in featureSet or 'texture' in featureSet:
         logging.info('Getting Texture features')
-        GLCMFeats = getGLCMFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=8)
+        GLCMFeats = getGLCMFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=THREAD)
         for k, v in zip(GLCMFeats.keys(), GLCMFeats.values()):
             if k != 'name':
                 globalGraph.vs[GLCMFeats['name']]['Texture_' + k] = v
 
     if 'Edge' in featureSet or 'edge' in featureSet:
         logging.info('Getting Edge features')
-        EdgeFeats = getEdgeFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=8)
+        EdgeFeats = getEdgeFeatures(wsiPath, names, contours, bboxes, pad=2, level=level, process_n=THREAD)
         for k, v in zip(EdgeFeats.keys(), EdgeFeats.values()):
             if k != 'name':
                 globalGraph.vs[EdgeFeats['name']]['Edge_' + k] = v
@@ -647,5 +664,5 @@ def run_wsi(args, configs):
 
 
 if __name__ == '__main__':
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture', 'Edge'], cell_types=['I', 'S', 'T'])
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Texture', 'Edge·'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Edge'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Edge'], cell_types=['I', 'S', 'T'])
