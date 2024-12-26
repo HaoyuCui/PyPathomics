@@ -1,12 +1,13 @@
 import logging
 import os.path
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
 
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, cKDTree
 
-from src.utils import get_triangle_feature_df
+from src.utils import get_triangle_feature_df, get_coords
 
 
 class FeatureExtractor:
@@ -16,6 +17,13 @@ class FeatureExtractor:
         self.feature_list = feature_list
         self.cell_types = cell_types
         self.statistic_types = statistic_types
+
+        # RipleyK's parameters
+        self.sample_size = [-1, -1]   # equal to the slide's size (about 10k x 10k)
+        self.radii_in_um = 32
+        self.res = 0.2201  # um per pixel
+        self.radii = [self.radii_in_um // self.res]
+
         assert len(self.statistic_types) > 0, 'In config.yaml: static_types should not be empty!'
 
     def read_csv_for_type(self, cell_type):
@@ -92,28 +100,81 @@ class FeatureExtractor:
 
         return pd.DataFrame(triangle_feature, index=[0])
 
+
+    def get_all_coords(self):
+        """
+        Get all coordinates for cell types in config
+        :return: dict of cell type and its coordinates
+        """
+        cell_coords = {}
+        for cell_type in self.cell_types:
+            csv_file = os.path.join(self.buffer_dir, f'{self.slide}_Feats_{cell_type}.csv')
+            df = pd.read_csv(csv_file)
+            xs, ys = get_coords(df)
+            cell_coords[cell_type] = (xs, ys)
+            self.sample_size[0], self.sample_size[1] = max(self.sample_size[0], max(xs)), max(self.sample_size[1], max(ys))
+        return cell_coords
+
+    def get_cluster_count(self, coords: dict, cell_types: list):
+        assert self.sample_size[0] != -1, 'sample_size should be set'
+        k = []
+        if len(cell_types) == 2:
+            for radius in self.radii:
+                counts = 0
+                # score_vol = np.pi * radius ** 2
+                # bound_size = self.sample_size[0] * self.sample_size[1]
+                alpha_x, alpha_y = coords[cell_types[0]][0], coords[cell_types[0]][1]
+                beta_x, beta_y = coords[cell_types[1]][0], coords[cell_types[1]][1]
+                tree = cKDTree(np.array([alpha_x, alpha_y]).T)
+                for x, y in zip(beta_x, beta_y):
+                    # boundary_correct = False
+                    counts += len(tree.query_ball_point([x, y], radius, p=2)) - 1
+                # CSR_Normalise
+                # k_value = bound_size * counts / len(beta_x)**2 - score_vol
+                # estimation
+                k_value = counts / len(beta_x)
+                k.append(k_value)
+        else:
+            raise ValueError('cell_types should be a list of 2')
+        return k
+
+    def extract_cluster_features(self):
+        cluster_features_dict = {}
+        all_coords = self.get_all_coords()
+        for i, cell_types_a in enumerate(self.cell_types):
+            for j, cell_types_b in enumerate(self.cell_types):
+                cluster_features_dict[f'{cell_types_a}_{cell_types_b}_Cluster_count'] = self.get_cluster_count(
+                    all_coords, [cell_types_a, cell_types_b])
+        return pd.DataFrame(cluster_features_dict, index=[0])
+
+
     def extract(self):
         if len(self.feature_list) == 0:
             raise ValueError('Feature list is empty! Check config file')
         elif len(self.cell_types) == 0:
             raise ValueError('Cell types list is empty! Check config file')
 
-        if 'Triangle' not in self.feature_list:
-            return self.extract_features()
-        elif 'Triangle' in self.feature_list and len(self.cell_types) == 1:
-            return self.extract_triangle_features()
-        elif 'Triangle' in self.feature_list and len(self.cell_types) >= 2:
-            return pd.concat([self.extract_features(), self.extract_triangle_features()], axis=1)
+        triangle_feature, cluster_feature = pd.DataFrame(), pd.DataFrame()
+
+        if 'Triangle' in self.feature_list:
+            triangle_feature =  self.extract_triangle_features()
+
+        if 'Cluster' in self.feature_list:
+            cluster_feature = self.extract_cluster_features()
+
+        additional_features = pd.concat([triangle_feature, cluster_feature], axis=1)
+
+        return pd.concat([self.extract_features(), additional_features], axis=1)
 
 
 # Core function
 def postprocess_files(args, configs):
-    process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
+    process_queue = list(Path(args['seg']).glob(f'*.json')) + list(Path(args['seg']).glob(f'*.dat'))
     df_feats_list = []
     for i, slide in enumerate(process_queue):
         logging.info(f'Phase 2 Postprocessing \t {i + 1} / {len(process_queue)} \t {slide} ')
         slide = slide.stem
-        extractor = FeatureExtractor(slide, args.buffer, feature_list=configs['feature-set'],
+        extractor = FeatureExtractor(slide, args['buffer'], feature_list=configs['feature-set'],
                                                  cell_types=configs['cell-types'],
                                                  statistic_types=configs['statistic-types'])
         slide_feats = extractor.extract()
@@ -123,3 +184,16 @@ def postprocess_files(args, configs):
     df_feats = pd.concat(df_feats_list, ignore_index=True)
     cols = ['slide'] + [col for col in df_feats.columns if col != 'slide']
     return df_feats[cols]
+
+
+if __name__ == '__main__':
+    args, configs = {}, {}
+    args['seg'] = r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a'
+    args['buffer'] = r'C:\Users\Ed\Downloads\temp'
+    configs['cell-types'] = ['I', 'S', 'T']
+    configs['statistic-types'] = ['basic']
+    configs['feature-set'] = ['Morph', 'Texture', 'Triangle', 'Cluster']
+
+    df_feats = postprocess_files(args, configs)
+
+    df_feats.to_csv('output.csv', index=False)
