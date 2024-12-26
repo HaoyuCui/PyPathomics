@@ -1,4 +1,4 @@
 openslide-home: D:\Applications\openslide-win64-20230414\bin
-feature-set: ['Morph', 'Texture', 'Triangle']  # in ['Morph', 'Texture', 'Triangle', 'Edge']
+feature-set: ['Morph', 'Texture', 'Triangle', 'Edge']  # in ['Morph', 'Texture', 'Triangle', 'Edge']
 cell-types: ['I', 'S', 'T']   # in ['I', 'S', 'T']
 statistic-types: ['basic']  # in ['basic', 'distribution']
