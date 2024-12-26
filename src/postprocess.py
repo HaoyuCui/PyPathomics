@@ -19,7 +19,7 @@ class FeatureExtractor:
         self.statistic_types = statistic_types
 
         # RipleyK's parameters
-        self.sample_size = [-1, -1]   # equal to the slide's size (about 10k x 10k)
+        self.sample_size = [-1, -1]   # equal to the ROI's size
         self.radii_in_um = 32
         self.res = 0.2201  # um per pixel
         self.radii = [self.radii_in_um // self.res]
@@ -169,12 +169,12 @@ class FeatureExtractor:
 
 # Core function
 def postprocess_files(args, configs):
-    process_queue = list(Path(args['seg']).glob(f'*.json')) + list(Path(args['seg']).glob(f'*.dat'))
+    process_queue = list(Path(args.seg).glob(f'*.json')) + list(Path(args.seg).glob(f'*.dat'))
     df_feats_list = []
     for i, slide in enumerate(process_queue):
         logging.info(f'Phase 2 Postprocessing \t {i + 1} / {len(process_queue)} \t {slide} ')
         slide = slide.stem
-        extractor = FeatureExtractor(slide, args['buffer'], feature_list=configs['feature-set'],
+        extractor = FeatureExtractor(slide, args.buffer, feature_list=configs['feature-set'],
                                                  cell_types=configs['cell-types'],
                                                  statistic_types=configs['statistic-types'])
         slide_feats = extractor.extract()
@@ -187,9 +187,10 @@ def postprocess_files(args, configs):
 
 
 if __name__ == '__main__':
-    args, configs = {}, {}
-    args['seg'] = r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a'
-    args['buffer'] = r'C:\Users\Ed\Downloads\temp'
+    import Namespace
+    args, configs = Namespace(), {}
+    args.seg = r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a'
+    args.buffer = r'C:\Users\Ed\Downloads\temp'
     configs['cell-types'] = ['I', 'S', 'T']
     configs['statistic-types'] = ['basic']
     configs['feature-set'] = ['Morph', 'Texture', 'Triangle', 'Cluster']
