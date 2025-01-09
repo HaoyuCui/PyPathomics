@@ -187,7 +187,7 @@ def postprocess_files(args, configs):
 
 
 if __name__ == '__main__':
-    import Namespace
+    from argparse import Namespace
     args, configs = Namespace(), {}
     args.seg = r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a'
     args.buffer = r'C:\Users\Ed\Downloads\temp'

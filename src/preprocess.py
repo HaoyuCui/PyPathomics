@@ -1,5 +1,8 @@
 import signal
 from collections import defaultdict
+
+import pandas as pd
+from scipy.spatial import cKDTree
 from tqdm import tqdm
 from skimage.measure import regionprops
 from src.utils import get_config
@@ -56,28 +59,42 @@ def worker_initializer():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-def process_features_in_parallel(feature_func, args_list, process_n=1):
-    if process_n == 1:
-        return feature_func(args_list[0])
-    else:
-        featuresDict = defaultdict(list)
-        vertex_len = len(args_list)
-        batch_size = vertex_len // 8
-        for batch in tqdm(range(0, vertex_len, batch_size)):
-            p_slice = [slice(batch + i, min(batch + batch_size, vertex_len), process_n) for i in range(process_n)]
-            args = [args_list[i] for i in p_slice]
-            try:
-                with mp.Pool(process_n, initializer=worker_initializer) as p:
-                    ans = p.map(feature_func, args)
-            except KeyboardInterrupt:
-                p.terminate()
-                p.join()
-                raise KeyboardInterrupt
-            for q_info in ans:
-                for k, v in zip(q_info.keys(), q_info.values()):
-                    featuresDict[k] += v
-        return featuresDict
+def get_cluster_count(radii: list ,coords: dict, cell_types: list):
+    """
+    :param radii: a list of radis of interest
+    :param coords: e.g. {'I': [[x1, x2, ...], [y1, y2, ...]], 'S': [[x1, x2, ...], [y1, y2, ...]]}
+    :param cell_types: e.g. ['I', 'S'], where S is the target and I is the source for creating trees
+    :return: dict e.g. {32: [1, 2, 3, ...], 64: [1, 2, 3, ...], ...}
+    """
+    k_dict = {}
+    assert len(cell_types) == 2, 'cell_types should be a list of 2'
+    for radius in radii:
+        k = []
+        alpha_x, alpha_y = coords[cell_types[0]][0], coords[cell_types[0]][1]
+        beta_x, beta_y = coords[cell_types[1]][0], coords[cell_types[1]][1]
+        tree = cKDTree(np.array([alpha_x, alpha_y]).T)
+        for x, y in zip(beta_x, beta_y):
+            k.append(len(tree.query_ball_point([x, y], radius, p=2)))
+        k_dict[radius] = k
+    return k_dict
 
+
+def get_cluster_feature(df: pd.DataFrame, cell_types: list, radii_in_um: list):
+    res = 0.2201  # um per pixel
+    radii_in_pixel = [r // res for r in radii_in_um]
+    type2label = {'T': 1, 'I': 2, 'S': 3}
+    all_coords = {}
+    ret_dict = {}  # cell type: result
+    for cell_type in cell_types:  # e.g.: I in I S T
+        centroid = df.loc[df['CellType'] == type2label[cell_type], 'Centroid'].tolist()
+        all_coords[cell_type] = ([c[0] for c in centroid], [c[1] for c in centroid])
+    for cell_type in cell_types:
+        ret_dict[cell_type] = {}
+        for cell_type_another in cell_types:
+            k = get_cluster_count(radii_in_pixel, all_coords, [cell_type_another, cell_type])
+            for i, radius_in_pixel in enumerate(radii_in_pixel):
+                ret_dict[cell_type][f'Cluster_{cell_type}_to_{cell_type_another}_r={radii_in_um[i]}'] = k[radius_in_pixel]
+    return ret_dict
 
 def _fractal_dimension(Z):
     """
@@ -628,10 +645,18 @@ def process(seg_path, wsi_path, output_path, level, feature_set, cell_types):
                      'S': [3],  # Connec
                      'N': [5]}  # Normal
 
+    cluster_dict = get_cluster_feature(vertex_dataframe, cell_types, [32, 64, 128]) if 'Cluster' in feature_set else {}
+
     for i in col_dist.keys():
         vertex_csvfile = os.path.join(output_path, sample_name + '_Feats_' + i + '.csv')
         save_index = vertex_dataframe['CellType'].isin(cellType_save[i]).values
-        vertex_dataframe.iloc[save_index].to_csv(vertex_csvfile, index=False, columns=col_dist[i])
+        df_basic_feature = vertex_dataframe.iloc[save_index].reset_index(drop=True)
+        if 'Cluster' in feature_set:
+            df_cluster_feature = pd.DataFrame(cluster_dict[i]).reset_index(drop=True)
+            pd.concat([df_basic_feature, df_cluster_feature], axis=1).to_csv(vertex_csvfile, index=False,
+                                                                     columns=col_dist[i] + list(cluster_dict[i].keys()))
+        else:
+            df_basic_feature.to_csv(vertex_csvfile, index=False, columns=col_dist[i])
 
 
 # Core function
@@ -664,5 +689,5 @@ def run_wsi(args, configs):
 
 
 if __name__ == '__main__':
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Edge'], cell_types=['I', 'S', 'T'])
-    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Edge'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\TCAM.ndpi', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Cluster'], cell_types=['I', 'S', 'T'])
+    process(seg_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.json', wsi_path=r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a\2023-31276.svs', output_path=r'C:\Users\Ed\Downloads\temp', level=0, feature_set=['Cluster'], cell_types=['I', 'S', 'T'])

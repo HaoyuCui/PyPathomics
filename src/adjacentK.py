@@ -1,6 +1,5 @@
 import os.path
 
-import ripleyk
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
