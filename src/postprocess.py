@@ -101,53 +101,6 @@ class FeatureExtractor:
         return pd.DataFrame(triangle_feature, index=[0])
 
 
-    def get_all_coords(self):
-        """
-        Get all coordinates for cell types in config
-        :return: dict of cell type and its coordinates
-        """
-        cell_coords = {}
-        for cell_type in self.cell_types:
-            csv_file = os.path.join(self.buffer_dir, f'{self.slide}_Feats_{cell_type}.csv')
-            df = pd.read_csv(csv_file)
-            xs, ys = get_coords(df)
-            cell_coords[cell_type] = (xs, ys)
-            self.sample_size[0], self.sample_size[1] = max(self.sample_size[0], max(xs)), max(self.sample_size[1], max(ys))
-        return cell_coords
-
-    def get_cluster_count(self, coords: dict, cell_types: list):
-        assert self.sample_size[0] != -1, 'sample_size should be set'
-        k = []
-        if len(cell_types) == 2:
-            for radius in self.radii:
-                counts = 0
-                # score_vol = np.pi * radius ** 2
-                # bound_size = self.sample_size[0] * self.sample_size[1]
-                alpha_x, alpha_y = coords[cell_types[0]][0], coords[cell_types[0]][1]
-                beta_x, beta_y = coords[cell_types[1]][0], coords[cell_types[1]][1]
-                tree = cKDTree(np.array([alpha_x, alpha_y]).T)
-                for x, y in zip(beta_x, beta_y):
-                    # boundary_correct = False
-                    counts += len(tree.query_ball_point([x, y], radius, p=2)) - 1
-                # CSR_Normalise
-                # k_value = bound_size * counts / len(beta_x)**2 - score_vol
-                # estimation
-                k_value = counts / len(beta_x)
-                k.append(k_value)
-        else:
-            raise ValueError('cell_types should be a list of 2')
-        return k
-
-    def extract_cluster_features(self):
-        cluster_features_dict = {}
-        all_coords = self.get_all_coords()
-        for i, cell_types_a in enumerate(self.cell_types):
-            for j, cell_types_b in enumerate(self.cell_types):
-                cluster_features_dict[f'{cell_types_a}_{cell_types_b}_Cluster_count'] = self.get_cluster_count(
-                    all_coords, [cell_types_a, cell_types_b])
-        return pd.DataFrame(cluster_features_dict, index=[0])
-
-
     def extract(self):
         if len(self.feature_list) == 0:
             raise ValueError('Feature list is empty! Check config file')
@@ -158,9 +111,6 @@ class FeatureExtractor:
 
         if 'Triangle' in self.feature_list:
             triangle_feature =  self.extract_triangle_features()
-
-        if 'Cluster' in self.feature_list:
-            cluster_feature = self.extract_cluster_features()
 
         additional_features = pd.concat([triangle_feature, cluster_feature], axis=1)
 
