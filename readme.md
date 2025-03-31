@@ -109,45 +109,94 @@ Optional Arguments:
 | **Centroid**  | Position of the cell's centroid                        |
 | **Cell Type** | Information about the cell type                        |
 
-##### Slide Cell Ratio
+### Slide Cell Ratio
+<details>
+  <summary><strong>Ratio</strong></summary>
+  Reflects the proportion of cells of this type.
+</details>
 
-| Feature       | Description                                            |
-|---------------|--------------------------------------------------------|
-| **Ratio**     | Reflects the proportion of cells of this type          |
+### Slide Morphological Features
+<details>
+  <summary><strong>Area</strong></summary>
+  Area of the cell, indicating cell size.
+</details>
+<details>
+  <summary><strong>AreaBbox</strong></summary>
+  Area of the minimum bounding rectangle around the cell.
+</details>
+<details>
+  <summary><strong>CellEccentricities</strong></summary>
+  Eccentricity of the cell.
+</details>
+<details>
+  <summary><strong>Circularity</strong></summary>
+  Roundness of the cell.
+</details>
+<details>
+  <summary><strong>Elongation</strong></summary>
+  Elongation rate of the cell.
+</details>
+<details>
+  <summary><strong>Extent</strong></summary>
+  Proportion of the cell occupying its bounding rectangle.
+</details>
+<details>
+  <summary><strong>MajorAxisLength / Morph_MinorAxisLength</strong></summary>
+  Lengths of the major and minor axes of the fitted ellipse for the cell.
+</details>
+<details>
+  <summary><strong>Perimeter</strong></summary>
+  Perimeter of the cell boundary.
+</details>
+<details>
+  <summary><strong>Solidity</strong></summary>
+  Ratio of the cell area to its convex hull area.
+</details>
+<details>
+  <summary><strong>CurvMean / Std / Max / Min</strong></summary>
+  Mean, standard deviation, maximum, and minimum of the cell boundary curvature.
+</details>
 
-##### Slide Morphological Features
+### Texture Features
+<details>
+  <summary><strong>ASM (Angular Second Moment)</strong></summary>
+  Texture consistency, measuring the similarity between a pixel and its neighbors.
+</details>
+<details>
+  <summary><strong>Contrast</strong></summary>
+  Texture contrast, describing the intensity variation in the image.
+</details>
+<details>
+  <summary><strong>Correlation</strong></summary>
+  Texture correlation, measuring the similarity between a pixel and its neighbors.
+</details>
+<details>
+  <summary><strong>Entropy</strong></summary>
+  Texture entropy, representing the diversity of information in the image; higher values indicate more complex textures.
+</details>
+<details>
+  <summary><strong>Homogeneity</strong></summary>
+  Texture homogeneity, assessing the consistency of the texture.
+</details>
+<details>
+  <summary><strong>IntensityMean / Std / Max / Min</strong></summary>
+  Mean, standard deviation, maximum, and minimum of the texture intensity.
+</details>
 
-| Feature                                         | Description                                                                   |
-|-------------------------------------------------|-------------------------------------------------------------------------------|
-| **Area**                                        | Area of the cell, indicating cell size                                        |
-| **AreaBbox**                                    | Area of the minimum bounding rectangle around the cell                        |
-| **CellEccentricities**                          | Eccentricity of the cell                                                      |
-| **Circularity**                                 | Roundness of the cell                                                         |
-| **Elongation**                                  | Elongation rate of the cell                                                   |
-| **Extent**                                      | Proportion of the cell occupying its bounding rectangle                       |
-| **MajorAxisLength** / **Morph_MinorAxisLength** | Lengths of the major and minor axes of the fitted ellipse for the cell        |
-| **Perimeter**                                   | Perimeter of the cell boundary                                                |
-| **Solidity**                                    | Ratio of the cell area to its convex hull area                                |
-| **CurvMean** / **Std** / **Max** / **Min**      | Mean, standard deviation, maximum, and minimum of the cell boundary curvature |
+### Delaunay Triangle Spatial Features
+<details>
+  <summary><strong>Area</strong></summary>
+  Area of the Delaunay triangle around the cell.
+</details>
+<details>
+  <summary><strong>Perimeter</strong></summary>
+  Perimeter of the Delaunay triangle around the cell.
+</details>
+<details>
+  <summary><strong>Angle_Range</strong></summary>
+  Difference between the maximum and minimum angles of the Delaunay triangle around the cell.
+</details>
 
-##### Texture Features
-
-| Feature                                         | Description                                                                                                           |
-|-------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| **ASM (Angular Second Moment)**                 | Texture consistency, measuring the similarity between a pixel and its neighbors                                       |
-| **Contrast**                                    | Texture contrast, describing the intensity variation in the image                                                     |
-| **Correlation**                                 | Texture correlation, measuring the similarity between a pixel and its neighbors                                       |
-| **Entropy**                                     | Texture entropy, representing the diversity of information in the image; higher values indicate more complex textures |
-| **Homogeneity**                                 | Texture homogeneity, assessing the consistency of the texture                                                         |
-| **IntensityMean** / **Std** / **Max** / **Min** | Mean, standard deviation, maximum, and minimum of the texture intensity                                               |
-
-##### Delaunay Triangle Spatial Features
-
-| Feature         | Description                                                                                |
-|-----------------|--------------------------------------------------------------------------------------------|
-| **Area**        | Area of the Delaunay triangle around the cell                                              |
-| **Perimeter**   | Perimeter of the Delaunay triangle around the cell                                         |
-| **Angle_Range** | Difference between the maximum and minimum angles of the Delaunay triangle around the cell |
 
 
 ## Citation
