@@ -107,12 +107,12 @@ class FeatureExtractor:
         elif len(self.cell_types) == 0:
             raise ValueError('Cell types list is empty! Check config file')
 
-        triangle_feature, cluster_feature = pd.DataFrame(), pd.DataFrame()
+        triangle_feature = pd.DataFrame()
 
         if 'Triangle' in self.feature_list:
             triangle_feature =  self.extract_triangle_features()
 
-        additional_features = pd.concat([triangle_feature, cluster_feature], axis=1)
+        additional_features = triangle_feature
 
         return pd.concat([self.extract_features(), additional_features], axis=1)
 
@@ -139,12 +139,12 @@ def postprocess_files(args, configs):
 if __name__ == '__main__':
     from argparse import Namespace
     args, configs = Namespace(), {}
-    args.seg = r'C:\Users\Ed\Downloads\WSI_json_biopsy_resection_a'
-    args.buffer = r'C:\Users\Ed\Downloads\temp'
+    args.seg = r'E:\hover-net-output\json'
+    args.buffer = r'E:\hover-net-output\feature'
     configs['cell-types'] = ['I', 'S', 'T']
     configs['statistic-types'] = ['basic']
-    configs['feature-set'] = ['Morph', 'Texture', 'Triangle', 'Cluster']
+    configs['feature-set'] = ['Morph', 'Texture', 'Triangle']
 
     df_feats = postprocess_files(args, configs)
 
-    df_feats.to_csv('output.csv', index=False)
+    df_feats.to_csv('ec-output.csv', index=False)
