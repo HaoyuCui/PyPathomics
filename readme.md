@@ -23,13 +23,22 @@ Support for:
 - [x] Cerberus (In Beta)
 [[Repo](https://github.com/TissueImageAnalytics/cerberus)] [[Paper](https://doi.org/10.1016/j.media.2022.102685)] (Graham et al., 2023)
 
+## Feature-sets
+
+![feature-set-eg](https://github.com/user-attachments/assets/30e54412-c26e-4dde-84b0-0b5a67f12c50)
+
+PyPthomics supports **[a] Cell Ratio**, **[b] Morphological Features**, **[c] Texture Features**, and **[d] Spatial Features (Delaunay Triangle)**.
+
 ## How it works?
 
 <div align=center>
  <img width="960" alt="image" src="https://github.com/user-attachments/assets/11098570-4939-4bb9-9080-7e2dbe3bc68c">
 </div>
 
+
 Get all **cell** and **slide-level** features directly through the cell segmentation file like Hover-Net's `.json` file.
+
+
 
 ## Installation
 
@@ -119,7 +128,7 @@ Optional Arguments:
 </details>
 
 <details>
-  <summary><strong>Slide Morphological Features</strong></summary>
+  <summary><strong>Morphological Features</strong></summary>
 
   - **Area**: Area of the cell, indicating cell size.  
   - **AreaBbox**: Area of the minimum bounding rectangle around the cell.  
