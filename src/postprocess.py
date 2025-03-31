@@ -1,12 +1,13 @@
 import logging
 import os.path
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
 
-from scipy.spatial import Delaunay
+from scipy.spatial import Delaunay, cKDTree
 
-from src.utils import get_triangle_feature_df
+from src.utils import get_triangle_feature_df, get_coords
 
 
 class FeatureExtractor:
@@ -16,6 +17,13 @@ class FeatureExtractor:
         self.feature_list = feature_list
         self.cell_types = cell_types
         self.statistic_types = statistic_types
+
+        # RipleyK's parameters
+        self.sample_size = [-1, -1]   # equal to the ROI's size
+        self.radii_in_um = 32
+        self.res = 0.2201  # um per pixel
+        self.radii = [self.radii_in_um // self.res]
+
         assert len(self.statistic_types) > 0, 'In config.yaml: static_types should not be empty!'
 
     def read_csv_for_type(self, cell_type):
@@ -92,23 +100,26 @@ class FeatureExtractor:
 
         return pd.DataFrame(triangle_feature, index=[0])
 
+
     def extract(self):
         if len(self.feature_list) == 0:
             raise ValueError('Feature list is empty! Check config file')
         elif len(self.cell_types) == 0:
             raise ValueError('Cell types list is empty! Check config file')
 
-        if 'Triangle' not in self.feature_list:
-            return self.extract_features()
-        elif 'Triangle' in self.feature_list and len(self.cell_types) == 1:
-            return self.extract_triangle_features()
-        elif 'Triangle' in self.feature_list and len(self.cell_types) >= 2:
-            return pd.concat([self.extract_features(), self.extract_triangle_features()], axis=1)
+        triangle_feature = pd.DataFrame()
+
+        if 'Triangle' in self.feature_list:
+            triangle_feature =  self.extract_triangle_features()
+
+        additional_features = triangle_feature
+
+        return pd.concat([self.extract_features(), additional_features], axis=1)
 
 
 # Core function
 def postprocess_files(args, configs):
-    process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
+    process_queue = list(Path(args.seg).glob(f'*.json')) + list(Path(args.seg).glob(f'*.dat'))
     df_feats_list = []
     for i, slide in enumerate(process_queue):
         logging.info(f'Phase 2 Postprocessing \t {i + 1} / {len(process_queue)} \t {slide} ')
@@ -123,3 +134,17 @@ def postprocess_files(args, configs):
     df_feats = pd.concat(df_feats_list, ignore_index=True)
     cols = ['slide'] + [col for col in df_feats.columns if col != 'slide']
     return df_feats[cols]
+
+
+if __name__ == '__main__':
+    from argparse import Namespace
+    args, configs = Namespace(), {}
+    args.seg = r'E:\hover-net-output\json'
+    args.buffer = r'E:\hover-net-output\feature'
+    configs['cell-types'] = ['I', 'S', 'T']
+    configs['statistic-types'] = ['basic']
+    configs['feature-set'] = ['Morph', 'Texture', 'Triangle']
+
+    df_feats = postprocess_files(args, configs)
+
+    df_feats.to_csv('ec-output.csv', index=False)

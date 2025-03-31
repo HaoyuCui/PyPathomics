@@ -1,4 +1,5 @@
 import logging
+import os.path
 
 import yaml
 import pandas as pd
@@ -32,7 +33,12 @@ def read_yaml(file_path):
 
 
 def get_config():
-    return read_yaml('config.yaml')
+    if os.path.exists('config.yaml'):
+        return read_yaml('config.yaml')
+    elif os.path.exists('../config.yaml'):
+        return read_yaml('../config.yaml')
+    else:
+        raise FileNotFoundError("Configuration file not found: config.yaml")
 
 
 # for triangle features
@@ -85,3 +91,20 @@ def get_triangle_feature_df(triangles, coords, threshold=3000):
 
     return pd.DataFrame({'Triangle_Area': area_list, 'Triangle_Perimeter': perimeter_list,
                          'Triangle_Angle_Range': angle_range_list})
+
+
+def get_coords(data:pd.DataFrame):
+    centroid = data['Centroid']
+    centroid = centroid.apply(lambda x: x[1:-1].split(','))
+
+    xs = centroid.apply(lambda x: np.float32(x[0]))
+    ys = centroid.apply(lambda x: np.float32(x[1]))
+    return np.array(xs), np.array(ys)
+
+
+def visualize(coords:dict):
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(24, 18))
+    for cell_type in coords.keys():
+        plt.scatter(coords[cell_type][0], coords[cell_type][1], alpha=0.5, s=1)
+    plt.show()
