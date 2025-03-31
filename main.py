@@ -32,8 +32,9 @@ def main():
     configs = get_config()
 
     print_config(args, configs)
-    assert args.output.suffix in ['.xlsx', '.csv'], \
-        'Output file should be in xlsx or csv format. Directories are not supported.'
+
+    if os.path.isdir(args.output):
+        args.output = args.output / 'pypathomics-result.csv'
 
     if os.listdir(args.buffer) != 0:
         logging.warning(f'Buffer directory {args.buffer} is not empty, it may cause conflict. Continue? (y/N)')
@@ -48,13 +49,12 @@ def main():
     # Post-process features
     df_feats = postprocess_files(args, configs)
 
-    output_loc = args.output
     if args.output.suffix == '.xlsx':
-        df_feats.to_excel(output_loc, index=False)
+        df_feats.to_excel(args.output, index=False)
     elif args.output.suffix == '.csv':
-        df_feats.to_csv(output_loc, index=False)
+        df_feats.to_csv(args.output, index=False)
 
-    logging.info(f'Features saved to {output_loc}')
+    logging.info(f'Features saved to {args.output}')
 
 
 if __name__ == '__main__':
