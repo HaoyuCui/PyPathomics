@@ -71,7 +71,7 @@ Required Arguments:
     --config     Specify the configuration file path
     --seg        Path to the segmentation directory or file from Hover-Net(.json) or Cerberus(.dat)
     --wsi        Path to the WSI directory or file
-    --ext        WSI file extension (default: .svs)
+    --ext        WSI file extension (default: .svs or svs)
     --buffer     Specify the output buffer dir for preprocessing
     --output     Set the output directory for the analysis
 ```
@@ -101,13 +101,15 @@ Optional Arguments:
     ```
 
 
-##### All-cell Info, stored in /path/to/buffer
+##### All-cell Info, stored in `/path/to/buffer`
 
-| Feature       | Description                                            |
-|---------------|--------------------------------------------------------|
-| **Name**      | Identifier for the cell                                |
-| **Centroid**  | Position of the cell's centroid                        |
-| **Cell Type** | Information about the cell type                        |
+| Feature       | Description                 | e.g.                      |
+|---------------|-----------------------------|---------------------------|
+| **Name**      | Identifier of the cell      | 7, 42, 113, ...           |
+| **Centroid**  | Position of the cell        | \[1676.85, 12851.68], ... |
+| **Cell Type** | Cell type in numeric coding | 0, 1, 0,  ...             |
+
+Different cell types will be stored in different files. Each file could be hundreds or thousands MBs in size as they stored all cells' information.
 
 ## Feature-sets Explanation
 
