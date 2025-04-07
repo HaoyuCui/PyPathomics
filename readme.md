@@ -14,6 +14,10 @@
 
 PyPathomics is an open-source software for gigapixel whole-slide image analysis. Off-the-shelf and easy-to-use.
 
+<a href="https://zenodo.org/records/15164919">
+ <img align="right", src="https://zenodo.org/badge/DOI/10.5281/zenodo.15164919.svg"/>
+</a>
+
 Currently under development. This is a simplified version of [[sc_MTOP](https://github.com/fuscc-deep-path/sc_MTOP)] [[Paper](https://www.nature.com/articles/s41467-023-42504-y)]
 
 Support for:
@@ -169,16 +173,19 @@ Different cell types will be stored in different files. Each file could be hundr
 
 ## Citation
 
- ```bibtex
-   @software{pypathomics,
-     author       = {HY Cui and XX Wang and J Xu and DP Chen},
-     title        = {PyPathomics},
-     year         = 2024,
-     publisher    = {GitHub},
-     url          = {https://github.com/HaoyuCui/PyPathomics},
-     version      = {1.0},
-   }
+If you find our work useful in your research, please consider citing our Zenodo record:
 
+ ```bibtex
+ @software{pypathomics,
+   author       = {HY Cui and XX Wang and J Xu and DP Chen},
+   title        = {PyPathomics},
+   year         = 2024,
+   publisher    = {GitHub},
+   url          = {https://github.com/HaoyuCui/PyPathomics},
+   version      = {1.0},
+   doi          = {10.5281/zenodo.15164919},
+   howpublished = {\url{https://zenodo.org/record/15164919}},
+ }
  ```
 
 
