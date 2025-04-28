@@ -30,9 +30,8 @@ except RuntimeError:
     pass
 
 try:
-    openslide_home = get_config()['openslide-home']
-    # if windows
-    if os.name == 'nt':
+    if hasattr(os, 'add_dll_directory'):
+        openslide_home = get_config()['openslide-home']
         os.add_dll_directory(openslide_home)
     from openslide import OpenSlide
 except Exception as e:
@@ -608,6 +607,7 @@ def process(seg_path, wsi_path, output_path, level, feature_set, cell_types):
 def preprocess_files(args, configs):
     process_queue = list(args.seg.glob(f'*.json')) + list(args.seg.glob(f'*.dat'))
     output_dir = args.buffer
+    os.mkdir(output_dir) if not os.path.exists(output_dir) else None
     ext = args.ext.split('.')[-1]
     if len(process_queue) > 1 and ext is None:
         logging.warning('No file extension provided, use --ext to specify the extension.')
